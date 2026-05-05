@@ -1,0 +1,5 @@
+services:
+  api:
+    image: ${REGISTRY}/api:latest
+    build:
+      dockerfile: Dockerfile

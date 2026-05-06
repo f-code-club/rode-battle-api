@@ -4,6 +4,10 @@
 
 - [**Go**](https://golang.org/dl/): Version 1.26.2 or later.
 - [**PostgreSQL**](https://www.postgresql.org/download/).
+- **migrate**: Used for managing migrations.
+  ```bash
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+  ```
 - **sqlc**: Used for generating type-safe Go code from SQL.
   ```bash
   go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest

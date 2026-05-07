@@ -6,7 +6,7 @@
 - [**PostgreSQL**](https://www.postgresql.org/download/).
 - **migrate**: Used for managing migrations.
   ```bash
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+  go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
   ```
 - **sqlc**: Used for generating type-safe Go code from SQL.
   ```bash

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS accounts(
     school varchar(64),
     student_id varchar(32),
     phone_number varchar(16),
+    is_verified bool NOT NULL DEFAULT false,
     is_banned bool NOT NULL DEFAULT false,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()

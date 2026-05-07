@@ -10,7 +10,7 @@ jobs:
       contents: read
       packages: write
     env:
-      REGISTRY: ghcr.io/${{ github.repository }}
+      REGISTRY: ghcr.io/f-code-club/rode-battle
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx

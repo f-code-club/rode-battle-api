@@ -21,12 +21,12 @@ func (s *AuthService) Register(ctx context.Context, email string, password strin
 
 	_, err := queries.GetAccountByEmail(ctx, email)
 	if err == nil {
-		return "", fmt.Errorf("The email has been registerd!")
+		return "", fmt.Errorf("the email has been registerd")
 	}
 
 	hashPassword, err := HashPassword(password)
 	if err != nil {
-		return "", fmt.Errorf("Can not hash the password!")
+		return "", fmt.Errorf("can not hash the password")
 	}
 
 	id, err := queries.CreateAccount(ctx, database.CreateAccountParams{
@@ -35,7 +35,7 @@ func (s *AuthService) Register(ctx context.Context, email string, password strin
 		Name:     name,
 	})
 	if err != nil {
-		return "", fmt.Errorf("Can not create new account!")
+		return "", fmt.Errorf("can not create new account")
 	}
 
 	return id.String(), nil

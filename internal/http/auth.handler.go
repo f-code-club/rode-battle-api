@@ -54,7 +54,7 @@ func validRegisterPayload(body RegisterPayload) error {
 func (s *Server) RegisterHandler(c fuego.ContextWithBody[RegisterPayload]) (string, error) {
 	body, err := c.Body()
 	if err != nil {
-		return "", fmt.Errorf("Can not parse the body!")
+		return "", fmt.Errorf("can not parse the body")
 	}
 
 	err = validRegisterPayload(body)

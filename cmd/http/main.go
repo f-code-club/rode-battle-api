@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -37,7 +36,7 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 }
 
 func main() {
-	pool, err := database.NewPool(os.Getenv("DATABASE_URL"))
+	pool, err := database.NewPool()
 	if err != nil {
 		panic(err)
 	}

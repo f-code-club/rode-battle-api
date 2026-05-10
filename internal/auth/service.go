@@ -2,11 +2,17 @@ package auth
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/database"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
+
+var ErrEmailAlreadyRegistered = errors.New("email already registered")
+
+const defaultTimeout = 5 * time.Second
 
 type AuthService struct {
 	Pool *pgxpool.Pool
@@ -16,27 +22,39 @@ func NewAuthService(p *pgxpool.Pool) *AuthService {
 	return &AuthService{Pool: p}
 }
 
-func (s *AuthService) Register(ctx context.Context, email string, password string, name string) (string, error) {
+func (s *AuthService) Register(ctx context.Context,
+	email string, password string, name string,
+	school string, studentID string, phoneNumber string,
+) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+
 	queries := database.New(s.Pool)
 
-	_, err := queries.GetAccountByEmail(ctx, email)
-	if err == nil {
-		return "", fmt.Errorf("the email has been registerd")
-	}
-
-	hashPassword, err := HashPassword(password)
+	exist, err := queries.IsEmailRegistered(ctx, email)
 	if err != nil {
-		return "", fmt.Errorf("can not hash the password")
+		return err
+	}
+	if exist {
+		return ErrEmailAlreadyRegistered
 	}
 
-	id, err := queries.CreateAccount(ctx, database.CreateAccountParams{
-		Email:    email,
-		Password: hashPassword,
-		Name:     name,
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	_, err = queries.CreateAccount(ctx, database.CreateAccountParams{
+		Email:       email,
+		Password:    string(hashedPassword),
+		Name:        name,
+		School:      &school,
+		StudentID:   &studentID,
+		PhoneNumber: &phoneNumber,
 	})
 	if err != nil {
-		return "", fmt.Errorf("can not create new account")
+		return err
 	}
 
-	return id.String(), nil
+	return nil
 }

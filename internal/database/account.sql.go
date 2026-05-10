@@ -12,38 +12,45 @@ import (
 )
 
 const createAccount = `-- name: CreateAccount :one
-INSERT INTO accounts (email, password, name)
-VALUES ($1, $2, $3)
+INSERT INTO accounts (email, password, name, school, student_id, phone_number)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id
 `
 
 type CreateAccountParams struct {
-	Email    string
-	Password string
-	Name     string
+	Email       string
+	Password    string
+	Name        string
+	School      *string
+	StudentID   *string
+	PhoneNumber *string
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, createAccount, arg.Email, arg.Password, arg.Name)
+	row := q.db.QueryRow(ctx, createAccount,
+		arg.Email,
+		arg.Password,
+		arg.Name,
+		arg.School,
+		arg.StudentID,
+		arg.PhoneNumber,
+	)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
 
-const getAccountByEmail = `-- name: GetAccountByEmail :one
-SELECT id, password
-FROM accounts
-WHERE email = $1
+const isEmailRegistered = `-- name: IsEmailRegistered :one
+SELECT EXISTS(
+    SELECT 1
+    FROM accounts
+    WHERE email = $1
+)
 `
 
-type GetAccountByEmailRow struct {
-	ID       uuid.UUID
-	Password string
-}
-
-func (q *Queries) GetAccountByEmail(ctx context.Context, email string) (GetAccountByEmailRow, error) {
-	row := q.db.QueryRow(ctx, getAccountByEmail, email)
-	var i GetAccountByEmailRow
-	err := row.Scan(&i.ID, &i.Password)
-	return i, err
+func (q *Queries) IsEmailRegistered(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRow(ctx, isEmailRegistered, email)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }

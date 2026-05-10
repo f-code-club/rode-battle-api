@@ -5,17 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/caarlos0/env/v11"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPool() (*pgxpool.Pool, error) {
-	cfg, err := env.ParseAs[Config]()
-	if err != nil {
-		return nil, err
-	}
-
-	pgxConfig, err := pgxpool.ParseConfig(cfg.DatabaseURL)
+func NewPool(databaseURL string) (*pgxpool.Pool, error) {
+	pgxConfig, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse database config: %w", err)
 	}

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/auth"
+	"github.com/f-code-club/rode-battle-api/internal/config"
 	"github.com/f-code-club/rode-battle-api/internal/database"
 	server "github.com/f-code-club/rode-battle-api/internal/http"
 
@@ -36,16 +37,23 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 }
 
 func main() {
-	pool, err := database.NewPool()
+	cfg, err := config.Load()
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	pool, err := database.NewPool(cfg.DatabaseURL)
+	if err != nil {
+		log.Printf("failed to init db pool: %v", err)
+		return
 	}
 
 	authService := auth.NewAuthService(pool)
 
-	s, err := server.NewServer(authService)
+	s, err := server.NewServer(cfg, authService)
 	if err != nil {
-		panic(err)
+		log.Printf("failed to create new server: %v", err)
+		return
 	}
 	server := s.Build()
 

@@ -1,77 +1,95 @@
 package http
 
 import (
-	"fmt"
-	"regexp"
+	"errors"
 	"strings"
+	"unicode"
 
+	"github.com/f-code-club/rode-battle-api/internal/auth"
 	"github.com/go-fuego/fuego"
 )
 
 var (
-	emailRegex       = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
-	uppercaseRegex   = regexp.MustCompile(`[A-Z]`)
-	lowercaseRegex   = regexp.MustCompile(`[a-z]`)
-	numberRegex      = regexp.MustCompile(`\d`)
-	specialCharRegex = regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`)
+	ErrInvalidPassword = errors.New(
+		"password must contain uppercase, lowercase, number, and special character",
+	)
+	ErrInvalidName   = errors.New("name must contain only letters and spaces")
+	ErrInvalidSchool = errors.New("school must contain only letters and spaces")
 )
 
-func isValidPassword(password string) bool {
-	if len(password) < 8 {
-		return false
+func isValidNameString(s string) bool {
+	for _, c := range s {
+		if !unicode.IsLetter(c) && c != ' ' {
+			return false
+		}
 	}
-
-	return uppercaseRegex.MatchString(password) &&
-		lowercaseRegex.MatchString(password) &&
-		numberRegex.MatchString(password) &&
-		specialCharRegex.MatchString(password)
+	return true
 }
 
-func validRegisterPayload(body RegisterPayload) error {
-	body.Email = strings.TrimSpace(body.Email)
+func (r *RegisterRequest) isValidPassword() bool {
+	var (
+		hasUpper   bool
+		hasLower   bool
+		hasNumber  bool
+		hasSpecial bool
+	)
 
-	if body.Email == "" {
-		return fmt.Errorf("email is required")
+	for _, ch := range r.Password {
+		switch {
+		case unicode.IsUpper(ch):
+			hasUpper = true
+
+		case unicode.IsLower(ch):
+			hasLower = true
+
+		case unicode.IsDigit(ch):
+			hasNumber = true
+
+		case strings.ContainsRune(
+			`!@#$%^&*()_+-=[]{};':"\|,.<>/?`,
+			ch,
+		):
+			hasSpecial = true
+		}
 	}
 
-	if !emailRegex.MatchString(body.Email) {
-		return fmt.Errorf("invalid email format")
-	}
-
-	if body.Password == "" {
-		return fmt.Errorf("password is required")
-	}
-
-	if !isValidPassword(body.Password) {
-		return fmt.Errorf(
-			"password must be at least 8 characters and contain uppercase, lowercase, number, and special character",
-		)
-	}
-
-	return nil
+	return hasUpper && hasLower && hasNumber && hasSpecial
 }
 
-func (s *Server) RegisterHandler(c fuego.ContextWithBody[RegisterPayload]) (string, error) {
+func (r *RegisterRequest) isValidName() bool {
+	return isValidNameString(r.Name)
+}
+
+func (r *RegisterRequest) isValidSchool() bool {
+	return isValidNameString(r.School)
+}
+
+func (s *Server) RegisterHandler(
+	c fuego.ContextWithBody[RegisterRequest],
+) (string, error) {
 	body, err := c.Body()
 	if err != nil {
-		return "", fmt.Errorf("can not parse the body")
+		return "", err
 	}
 
-	err = validRegisterPayload(body)
+	err = s.auth.Register(
+		c.Context(),
+		body.Email,
+		body.Password,
+		body.Name,
+		body.School,
+		body.StudentId,
+		body.PhoneNumber,
+	)
 	if err != nil {
-		return "", fuego.BadRequestError{
-			Err:    err,
-			Detail: err.Error(),
+		if errors.Is(err, auth.ErrEmailAlreadyRegistered) {
+			return "", fuego.ConflictError{
+				Err:    err,
+				Detail: err.Error(),
+			}
 		}
+		return "", err
 	}
 
-	id, err := s.auth.Register(c.Context(), body.Email, body.Password, body.Name)
-	if err != nil {
-		return "", fuego.BadRequestError{
-			Err:    err,
-			Detail: err.Error(),
-		}
-	}
-
-	return id, nil
+	return "Register successful!", nil
 }

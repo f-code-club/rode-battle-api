@@ -3,26 +3,22 @@ package http
 import (
 	"fmt"
 
-	"github.com/caarlos0/env/v11"
 	"github.com/f-code-club/rode-battle-api/internal/auth"
+	"github.com/f-code-club/rode-battle-api/internal/config"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-fuego/fuego"
 )
 
 type Server struct {
-	Config Config
+	Config config.Config
 
 	auth *auth.AuthService
 }
 
 func NewServer(
+	cfg config.Config,
 	authService *auth.AuthService,
 ) (*Server, error) {
-	cfg, err := env.ParseAs[Config]()
-	if err != nil {
-		return nil, err
-	}
-
 	return &Server{
 		Config: cfg,
 		auth:   authService,

@@ -6,6 +6,7 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/auth"
 	"github.com/f-code-club/rode-battle-api/internal/validation"
 	"github.com/go-fuego/fuego"
+	"github.com/go-playground/validator/v10"
 )
 
 func (s *Server) RegisterHandler(
@@ -13,12 +14,14 @@ func (s *Server) RegisterHandler(
 ) (string, error) {
 	body, err := c.Body()
 	if err != nil {
+		var validationErrs validator.ValidationErrors
+		if errors.As(err, &validationErrs) {
+			mapped := validation.MapValidationError(validationErrs)
+			return "", fuego.BadRequestError{
+				Detail: mapped.Error(),
+			}
+		}
 		return "", err
-	}
-
-	err = validation.Validate.Struct(body)
-	if err != nil {
-		return "", validation.MapValidationError(err)
 	}
 
 	err = s.auth.Register(

@@ -13,7 +13,6 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/database"
 	server "github.com/f-code-club/rode-battle-api/internal/http"
 	"github.com/f-code-club/rode-battle-api/internal/validation"
-	"github.com/go-playground/validator/v10"
 
 	"github.com/go-fuego/fuego"
 )
@@ -38,15 +37,11 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 }
 
 func main() {
-	validation.Validate = validator.New()
-	validation.Validate.RegisterValidation(
-		"strong_password",
-		validation.ValidateStrongPassword,
-	)
-	validation.Validate.RegisterValidation(
-		"human_name",
-		validation.ValidateName,
-	)
+	err := validation.Init()
+	if err != nil {
+		log.Printf("failed to init validator: %v", err)
+		return
+	}
 
 	pool, err := database.NewPool()
 	if err != nil {

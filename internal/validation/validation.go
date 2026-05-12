@@ -21,9 +21,18 @@ var (
 
 var Validate *validator.Validate
 
-func ValidateStrongPassword(fl validator.FieldLevel) bool {
-	fmt.Println("CUSTOM PASSWORD VALIDATOR CALLED")
+func Init() error {
+	Validate = validator.New()
+	if err := Validate.RegisterValidation("strong_password", ValidateStrongPassword); err != nil {
+		return fmt.Errorf("register strong_password: %w", err)
+	}
+	if err := Validate.RegisterValidation("human_name", ValidateName); err != nil {
+		return fmt.Errorf("register human_name: %w", err)
+	}
+	return nil
+}
 
+func ValidateStrongPassword(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 
 	var (

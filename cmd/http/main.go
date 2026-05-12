@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/auth"
-	"github.com/f-code-club/rode-battle-api/internal/config"
 	"github.com/f-code-club/rode-battle-api/internal/database"
 	server "github.com/f-code-club/rode-battle-api/internal/http"
+	"github.com/f-code-club/rode-battle-api/internal/validation"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/go-fuego/fuego"
 )
@@ -37,12 +38,17 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 }
 
 func main() {
-	cfg, err := config.Load()
-	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
-	}
+	validation.Validate = validator.New()
+	validation.Validate.RegisterValidation(
+		"strong_password",
+		validation.ValidateStrongPassword,
+	)
+	validation.Validate.RegisterValidation(
+		"human_name",
+		validation.ValidateName,
+	)
 
-	pool, err := database.NewPool(cfg.DatabaseURL)
+	pool, err := database.NewPool()
 	if err != nil {
 		log.Printf("failed to init db pool: %v", err)
 		return
@@ -50,7 +56,7 @@ func main() {
 
 	authService := auth.NewAuthService(pool)
 
-	s, err := server.NewServer(cfg, authService)
+	s, err := server.NewServer(authService)
 	if err != nil {
 		log.Printf("failed to create new server: %v", err)
 		return

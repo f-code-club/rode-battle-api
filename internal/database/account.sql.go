@@ -40,17 +40,20 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (u
 	return id, err
 }
 
-const isEmailRegistered = `-- name: IsEmailRegistered :one
-SELECT EXISTS(
-    SELECT 1
-    FROM accounts
-    WHERE email = $1
-)
+const getAccountPasswordByEmail = `-- name: GetAccountPasswordByEmail :one
+SELECT id, password
+FROM accounts
+WHERE email = $1
 `
 
-func (q *Queries) IsEmailRegistered(ctx context.Context, email string) (bool, error) {
-	row := q.db.QueryRow(ctx, isEmailRegistered, email)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
+type GetAccountPasswordByEmailRow struct {
+	ID       uuid.UUID
+	Password string
+}
+
+func (q *Queries) GetAccountPasswordByEmail(ctx context.Context, email string) (GetAccountPasswordByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getAccountPasswordByEmail, email)
+	var i GetAccountPasswordByEmailRow
+	err := row.Scan(&i.ID, &i.Password)
+	return i, err
 }

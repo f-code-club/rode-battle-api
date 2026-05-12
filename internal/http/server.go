@@ -3,22 +3,25 @@ package http
 import (
 	"fmt"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/f-code-club/rode-battle-api/internal/auth"
-	"github.com/f-code-club/rode-battle-api/internal/config"
+	"github.com/f-code-club/rode-battle-api/internal/validation"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-fuego/fuego"
 )
 
 type Server struct {
-	Config config.Config
+	Config Config
 
 	auth *auth.AuthService
 }
 
-func NewServer(
-	cfg config.Config,
-	authService *auth.AuthService,
-) (*Server, error) {
+func NewServer(authService *auth.AuthService) (*Server, error) {
+	cfg, err := env.ParseAs[Config]()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Server{
 		Config: cfg,
 		auth:   authService,
@@ -29,6 +32,7 @@ func (s *Server) Build() *fuego.Server {
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", s.Config.Port)),
 		fuego.WithGlobalMiddlewares(s.CorsMiddleware),
+		fuego.WithValidator(validation.Validate),
 		fuego.WithEngineOptions(
 			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
 				UIHandler:            s.OpenAPIHandler,

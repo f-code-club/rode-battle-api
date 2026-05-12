@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/database"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -31,11 +32,14 @@ func (s *AuthService) Register(ctx context.Context,
 
 	queries := database.New(s.Pool)
 
-	exist, err := queries.IsEmailRegistered(ctx, email)
+	_, err := queries.GetAccountPasswordByEmail(ctx, email)
 	if err != nil {
-		return err
-	}
-	if exist {
+
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+
+	} else {
 		return ErrEmailAlreadyRegistered
 	}
 

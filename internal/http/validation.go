@@ -1,22 +1,11 @@
-package validation
+package http
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
-)
-
-var (
-	ErrInvalidPassword = errors.New(
-		"password must contain uppercase, lowercase, number, and special character",
-	)
-
-	ErrInvalidName = errors.New(
-		"name must contain only letters and spaces",
-	)
 )
 
 var Validate *validator.Validate
@@ -26,8 +15,8 @@ func Init() error {
 	if err := Validate.RegisterValidation("strong_password", ValidateStrongPassword); err != nil {
 		return fmt.Errorf("register strong_password: %w", err)
 	}
-	if err := Validate.RegisterValidation("human_name", ValidateName); err != nil {
-		return fmt.Errorf("register human_name: %w", err)
+	if err := Validate.RegisterValidation("name", ValidateName); err != nil {
+		return fmt.Errorf("register name: %w", err)
 	}
 	return nil
 }
@@ -77,25 +66,4 @@ func ValidateName(fl validator.FieldLevel) bool {
 	}
 
 	return true
-}
-
-func MapValidationError(err error) error {
-	validationErrors, ok := err.(validator.ValidationErrors)
-	if !ok {
-		return err
-	}
-
-	for _, e := range validationErrors {
-
-		switch e.Tag() {
-
-		case "strong_password":
-			return ErrInvalidPassword
-
-		case "human_name":
-			return ErrInvalidName
-		}
-	}
-
-	return err
 }

@@ -4,9 +4,7 @@ import (
 	"errors"
 
 	"github.com/f-code-club/rode-battle-api/internal/auth"
-	"github.com/f-code-club/rode-battle-api/internal/validation"
 	"github.com/go-fuego/fuego"
-	"github.com/go-playground/validator/v10"
 )
 
 func (s *Server) RegisterHandler(
@@ -14,13 +12,6 @@ func (s *Server) RegisterHandler(
 ) (string, error) {
 	body, err := c.Body()
 	if err != nil {
-		var validationErrs validator.ValidationErrors
-		if errors.As(err, &validationErrs) {
-			mapped := validation.MapValidationError(validationErrs)
-			return "", fuego.BadRequestError{
-				Detail: mapped.Error(),
-			}
-		}
 		return "", err
 	}
 
@@ -33,14 +24,17 @@ func (s *Server) RegisterHandler(
 		body.StudentId,
 		body.PhoneNumber,
 	)
-	if err != nil {
-		if errors.Is(err, auth.ErrEmailAlreadyRegistered) {
-			return "", fuego.ConflictError{
-				Err:    err,
-				Detail: err.Error(),
-			}
+	if errors.Is(err, auth.ErrEmailAlreadyRegistered) {
+		return "", fuego.ConflictError{
+			Err:    err,
+			Detail: err.Error(),
 		}
-		return "", err
+	}
+	if err != nil {
+		return "", fuego.InternalServerError{
+			Err:    err,
+			Detail: "internal server error",
+		}
 	}
 
 	return "Register successful!", nil

@@ -5,7 +5,6 @@ import (
 
 	"github.com/caarlos0/env/v11"
 	"github.com/f-code-club/rode-battle-api/internal/auth"
-	"github.com/f-code-club/rode-battle-api/internal/validation"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-fuego/fuego"
 )
@@ -32,7 +31,7 @@ func (s *Server) Build() *fuego.Server {
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", s.Config.Port)),
 		fuego.WithGlobalMiddlewares(s.CorsMiddleware),
-		fuego.WithValidator(validation.Validate),
+		fuego.WithValidator(Validate),
 		fuego.WithEngineOptions(
 			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
 				UIHandler:            s.OpenAPIHandler,

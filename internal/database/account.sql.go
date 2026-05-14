@@ -40,20 +40,20 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (u
 	return id, err
 }
 
-const getAccountPasswordByEmail = `-- name: GetAccountPasswordByEmail :one
+const getAccountByEmail = `-- name: GetAccountByEmail :one
 SELECT id, password
 FROM accounts
 WHERE email = $1
 `
 
-type GetAccountPasswordByEmailRow struct {
+type GetAccountByEmailRow struct {
 	ID       uuid.UUID
 	Password string
 }
 
-func (q *Queries) GetAccountPasswordByEmail(ctx context.Context, email string) (GetAccountPasswordByEmailRow, error) {
-	row := q.db.QueryRow(ctx, getAccountPasswordByEmail, email)
-	var i GetAccountPasswordByEmailRow
+func (q *Queries) GetAccountByEmail(ctx context.Context, email string) (GetAccountByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getAccountByEmail, email)
+	var i GetAccountByEmailRow
 	err := row.Scan(&i.ID, &i.Password)
 	return i, err
 }

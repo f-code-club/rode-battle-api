@@ -10,8 +10,8 @@ import (
 type RegisterRequest struct {
 	Email       string `json:"email" validate:"required,email"`
 	Password    string `json:"password" validate:"required,min=8,strong_password"`
-	Name        string `json:"name" validate:"required,human_name"`
-	School      string `json:"school" validate:"required,human_name"`
+	Name        string `json:"name" validate:"required,name"`
+	School      string `json:"school" validate:"required,name"`
 	StudentId   string `json:"student_id" validate:"required,alphanum"`
 	PhoneNumber string `json:"phone_number" validate:"required,numeric,min=10,max=11"`
 }

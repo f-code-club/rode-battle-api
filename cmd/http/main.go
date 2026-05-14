@@ -12,7 +12,6 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/auth"
 	"github.com/f-code-club/rode-battle-api/internal/database"
 	server "github.com/f-code-club/rode-battle-api/internal/http"
-	"github.com/f-code-club/rode-battle-api/internal/validation"
 
 	"github.com/go-fuego/fuego"
 )
@@ -37,7 +36,7 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 }
 
 func main() {
-	err := validation.Init()
+	err := server.Init()
 	if err != nil {
 		log.Printf("failed to init validator: %v", err)
 		return

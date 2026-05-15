@@ -7,12 +7,14 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/auth"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-fuego/fuego"
+	"github.com/go-playground/validator/v10"
 )
 
 type Server struct {
 	Config Config
 
-	auth *auth.AuthService
+	auth     *auth.AuthService
+	validate *validator.Validate
 }
 
 func NewServer(authService *auth.AuthService) (*Server, error) {
@@ -21,22 +23,23 @@ func NewServer(authService *auth.AuthService) (*Server, error) {
 		return nil, err
 	}
 
+	validate, err := Init()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Server{
-		Config: cfg,
-		auth:   authService,
+		Config:   cfg,
+		auth:     authService,
+		validate: validate,
 	}, nil
 }
 
 func (s *Server) Build() *fuego.Server {
-	validate, err := Init()
-	if err != nil {
-		panic(err)
-	}
-
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", s.Config.Port)),
 		fuego.WithGlobalMiddlewares(s.CorsMiddleware),
-		fuego.WithValidator(validate),
+		fuego.WithValidator(s.validate),
 		fuego.WithEngineOptions(
 			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
 				UIHandler:            s.OpenAPIHandler,

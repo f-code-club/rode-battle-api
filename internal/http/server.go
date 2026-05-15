@@ -13,8 +13,8 @@ import (
 type Server struct {
 	Config Config
 
-	auth     *auth.AuthService
-	validate *validator.Validate
+	auth      *auth.AuthService
+	validator *validator.Validate
 }
 
 func NewServer(authService *auth.AuthService) (*Server, error) {
@@ -23,15 +23,15 @@ func NewServer(authService *auth.AuthService) (*Server, error) {
 		return nil, err
 	}
 
-	validate, err := Init()
+	validator, err := NewValidator()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Server{
-		Config:   cfg,
-		auth:     authService,
-		validate: validate,
+		Config:    cfg,
+		auth:      authService,
+		validator: validator,
 	}, nil
 }
 
@@ -39,7 +39,7 @@ func (s *Server) Build() *fuego.Server {
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", s.Config.Port)),
 		fuego.WithGlobalMiddlewares(s.CorsMiddleware),
-		fuego.WithValidator(s.validate),
+		fuego.WithValidator(s.validator),
 		fuego.WithEngineOptions(
 			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
 				UIHandler:            s.OpenAPIHandler,

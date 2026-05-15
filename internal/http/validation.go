@@ -1,20 +1,19 @@
 package http
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
 )
 
-func Init() (*validator.Validate, error) {
+func NewValidator() (*validator.Validate, error) {
 	validate := validator.New()
 	if err := validate.RegisterValidation("strong_password", ValidateStrongPassword); err != nil {
-		return nil, fmt.Errorf("register strong_password: %w", err)
+		return nil, err
 	}
 	if err := validate.RegisterValidation("name", ValidateName); err != nil {
-		return nil, fmt.Errorf("register name: %w", err)
+		return nil, err
 	}
 	return validate, nil
 }

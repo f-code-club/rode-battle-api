@@ -28,10 +28,15 @@ func NewServer(authService *auth.AuthService) (*Server, error) {
 }
 
 func (s *Server) Build() *fuego.Server {
+	validate, err := Init()
+	if err != nil {
+		panic(err)
+	}
+
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", s.Config.Port)),
 		fuego.WithGlobalMiddlewares(s.CorsMiddleware),
-		fuego.WithValidator(Validate),
+		fuego.WithValidator(validate),
 		fuego.WithEngineOptions(
 			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
 				UIHandler:            s.OpenAPIHandler,

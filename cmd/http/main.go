@@ -36,12 +36,6 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 }
 
 func main() {
-	err := server.Init()
-	if err != nil {
-		log.Printf("failed to init validator: %v", err)
-		return
-	}
-
 	pool, err := database.NewPool()
 	if err != nil {
 		log.Printf("failed to init db pool: %v", err)

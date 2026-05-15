@@ -8,17 +8,15 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var Validate *validator.Validate
-
-func Init() error {
-	Validate = validator.New()
-	if err := Validate.RegisterValidation("strong_password", ValidateStrongPassword); err != nil {
-		return fmt.Errorf("register strong_password: %w", err)
+func Init() (*validator.Validate, error) {
+	validate := validator.New()
+	if err := validate.RegisterValidation("strong_password", ValidateStrongPassword); err != nil {
+		return nil, fmt.Errorf("register strong_password: %w", err)
 	}
-	if err := Validate.RegisterValidation("name", ValidateName); err != nil {
-		return fmt.Errorf("register name: %w", err)
+	if err := validate.RegisterValidation("name", ValidateName); err != nil {
+		return nil, fmt.Errorf("register name: %w", err)
 	}
-	return nil
+	return validate, nil
 }
 
 func ValidateStrongPassword(fl validator.FieldLevel) bool {

@@ -9,6 +9,9 @@ import (
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {
 	fuego.Get(f, "/", s.PingHandler)
+
+	auth := fuego.Group(f, "/auth")
+	fuego.Post(auth, "/register", s.RegisterHandler)
 }
 
 func (s *Server) OpenAPIHandler(specURL string) http.Handler {

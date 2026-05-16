@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/f-code-club/rode-battle-api/internal/auth"
+	"github.com/f-code-club/rode-battle-api/internal/database"
 	server "github.com/f-code-club/rode-battle-api/internal/http"
 
 	"github.com/go-fuego/fuego"
@@ -34,9 +36,18 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 }
 
 func main() {
-	s, err := server.NewServer()
+	pool, err := database.NewPool()
 	if err != nil {
-		panic(err)
+		log.Printf("failed to init db pool: %v", err)
+		return
+	}
+
+	authService := auth.NewAuthService(pool)
+
+	s, err := server.NewServer(authService)
+	if err != nil {
+		log.Printf("failed to create new server: %v", err)
+		return
 	}
 	server := s.Build()
 

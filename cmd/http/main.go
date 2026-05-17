@@ -42,7 +42,13 @@ func main() {
 		return
 	}
 
-	authService := auth.NewAuthService(pool)
+	tokenService, err := auth.NewTokenService()
+	if err != nil {
+		log.Printf("failed to create token service: %v", err)
+		return
+	}
+
+	authService := auth.NewAuthService(pool, tokenService)
 
 	s, err := server.NewServer(authService)
 	if err != nil {

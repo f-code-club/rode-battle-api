@@ -39,3 +39,32 @@ func (s *Server) RegisterHandler(
 
 	return "Register successful!", nil
 }
+
+func (s *Server) LoginHandler(
+	c fuego.ContextWithBody[LoginRequest],
+) (LoginResponse, error) {
+	body, err := c.Body()
+	if err != nil {
+		return LoginResponse{}, err
+	}
+
+	result, err := s.auth.Login(
+		c.Context(),
+		body.Email,
+		body.Password,
+	)
+	if err != nil {
+		return LoginResponse{}, fuego.UnauthorizedError{
+			Err:    err,
+			Detail: "invalid email or password",
+		}
+	}
+
+	return LoginResponse{
+		AccessToken: result.AccessToken,
+		UserProfile: UserBasicProfile{
+			Name:  result.Name,
+			Email: result.Email,
+		},
+	}, nil
+}

@@ -10,7 +10,7 @@ import (
 )
 
 type TokenService struct {
-	Secret    string `env:"JWT_SECRET", envRequired:"true"`
+	Secret    string `env:"JWT_SECRET" envRequired:"true"`
 	ExpiredIn int    `env:"JWT_EXPIRED_IN" envDefault:"5"` // hours
 }
 

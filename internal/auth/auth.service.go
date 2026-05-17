@@ -26,6 +26,7 @@ type LoginResult struct {
 	AccessToken string
 	Name        string
 	Email       string
+	Role        string
 }
 
 func NewAuthService(p *pgxpool.Pool, tokenService *TokenService) *AuthService {
@@ -93,5 +94,6 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 		AccessToken: accessToken,
 		Name:        account.Name,
 		Email:       account.Email,
+		Role:        string(account.Role),
 	}, nil
 }

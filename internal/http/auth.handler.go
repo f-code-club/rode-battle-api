@@ -65,6 +65,7 @@ func (s *Server) LoginHandler(
 		UserProfile: UserBasicProfile{
 			Name:  result.Name,
 			Email: result.Email,
+			Role:  result.Role,
 		},
 	}, nil
 }

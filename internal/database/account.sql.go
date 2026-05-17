@@ -41,19 +41,32 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (u
 }
 
 const getAccountByEmail = `-- name: GetAccountByEmail :one
-SELECT id, password
+SELECT id, email, name, role, password, is_verified, is_banned
 FROM accounts
 WHERE email = $1
 `
 
 type GetAccountByEmailRow struct {
-	ID       uuid.UUID
-	Password string
+	ID         uuid.UUID
+	Email      string
+	Name       string
+	Role       Role
+	Password   string
+	IsVerified bool
+	IsBanned   bool
 }
 
 func (q *Queries) GetAccountByEmail(ctx context.Context, email string) (GetAccountByEmailRow, error) {
 	row := q.db.QueryRow(ctx, getAccountByEmail, email)
 	var i GetAccountByEmailRow
-	err := row.Scan(&i.ID, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.Password,
+		&i.IsVerified,
+		&i.IsBanned,
+	)
 	return i, err
 }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/f-code-club/rode-battle-api/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -16,7 +15,6 @@ type TokenService struct {
 
 type Claims struct {
 	jwt.RegisteredClaims
-	Role database.Role `json:"role"`
 }
 
 var (
@@ -33,7 +31,7 @@ func NewTokenService() (*TokenService, error) {
 	return &t, nil
 }
 
-func (s *TokenService) GenerateToken(userID string, role database.Role) (string, error) {
+func (s *TokenService) GenerateToken(userID string) (string, error) {
 	claim := Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().
@@ -41,7 +39,6 @@ func (s *TokenService) GenerateToken(userID string, role database.Role) (string,
 			IssuedAt: jwt.NewNumericDate(time.Now()),
 			Subject:  userID,
 		},
-		Role: role,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)

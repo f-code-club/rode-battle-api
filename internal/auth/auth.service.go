@@ -85,7 +85,7 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 		return LoginResult{}, err
 	}
 
-	accessToken, err := s.TokenService.GenerateToken(account.ID.String(), account.Role)
+	accessToken, err := s.TokenService.GenerateToken(account.ID.String())
 	if err != nil {
 		return LoginResult{}, err
 	}

@@ -21,14 +21,8 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type LoginResponse struct {
-	AccessToken string           `json:"access_token"`
-	UserProfile UserBasicProfile `json:"user_basic_profile"`
-}
-
 var _ fuego.InTransformer = (*RegisterRequest)(nil)
 var _ fuego.InTransformer = (*LoginRequest)(nil)
-var _ fuego.OutTransformer = (*LoginResponse)(nil)
 
 func (r *RegisterRequest) InTransform(ctx context.Context) error {
 	r.Email = strings.TrimSpace(
@@ -47,10 +41,5 @@ func (l *LoginRequest) InTransform(ctx context.Context) error {
 		strings.ToLower(l.Email),
 	)
 
-	return nil
-}
-
-func (l *LoginResponse) OutTransform(ctx context.Context) error {
-	l.AccessToken = strings.TrimSpace(l.AccessToken)
 	return nil
 }

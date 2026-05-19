@@ -22,11 +22,15 @@ type AuthService struct {
 	TokenService *TokenService
 }
 
-type LoginResult struct {
-	AccessToken string
-	Name        string
-	Email       string
-	Role        string
+type UserBasicProfile struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+	Role  string `json:"role"`
+}
+
+type AuthResponse struct {
+	AccessToken string           `json:"access_token"`
+	UserProfile UserBasicProfile `json:"user_profile"`
 }
 
 func NewAuthService(p *pgxpool.Pool, tokenService *TokenService) *AuthService {
@@ -65,35 +69,37 @@ func (s *AuthService) Register(ctx context.Context,
 	return nil
 }
 
-func (s *AuthService) Login(ctx context.Context, email string, password string) (LoginResult, error) {
+func (s *AuthService) Login(ctx context.Context, email string, password string) (AuthResponse, error) {
 	queries := database.New(s.Pool)
 
 	account, err := queries.GetAccountByEmail(ctx, email)
 	if err != nil {
-		return LoginResult{}, err
+		return AuthResponse{}, err
 	}
 
 	if account.IsBanned {
-		return LoginResult{}, ErrAccountBanned
+		return AuthResponse{}, ErrAccountBanned
 	}
 
 	if !account.IsVerified {
-		return LoginResult{}, ErrAccountNotVerified
+		return AuthResponse{}, ErrAccountNotVerified
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(password)); err != nil {
-		return LoginResult{}, err
+		return AuthResponse{}, err
 	}
 
 	accessToken, err := s.TokenService.GenerateToken(account.ID.String())
 	if err != nil {
-		return LoginResult{}, err
+		return AuthResponse{}, err
 	}
 
-	return LoginResult{
+	return AuthResponse{
 		AccessToken: accessToken,
-		Name:        account.Name,
-		Email:       account.Email,
-		Role:        string(account.Role),
+		UserProfile: UserBasicProfile{
+			Email: account.Email,
+			Name:  account.Name,
+			Role:  string(account.Role),
+		},
 	}, nil
 }

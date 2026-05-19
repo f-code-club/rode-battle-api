@@ -23,9 +23,9 @@ type AuthService struct {
 }
 
 type UserBasicProfile struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
-	Role  string `json:"role"`
+	Email string        `json:"email"`
+	Name  string        `json:"name"`
+	Role  database.Role `json:"role"`
 }
 
 type AuthResponse struct {
@@ -99,7 +99,7 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 		UserProfile: UserBasicProfile{
 			Email: account.Email,
 			Name:  account.Name,
-			Role:  string(account.Role),
+			Role:  account.Role,
 		},
 	}, nil
 }

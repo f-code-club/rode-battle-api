@@ -9,8 +9,8 @@ import (
 )
 
 type TokenService struct {
-	Secret    string `env:"JWT_SECRET" envRequired:"true"`
-	ExpiredIn int    `env:"JWT_EXPIRED_IN" envDefault:"5"` // hours
+	Secret    string
+	ExpiredIn int
 }
 
 type Claims struct {
@@ -23,12 +23,15 @@ var (
 )
 
 func NewTokenService() (*TokenService, error) {
-	t, err := env.ParseAs[TokenService]()
+	t, err := env.ParseAs[Config]()
 	if err != nil {
 		return nil, err
 	}
 
-	return &t, nil
+	return &TokenService{
+		Secret:    t.Secret,
+		ExpiredIn: t.ExpiredIn,
+	}, nil
 }
 
 func (s *TokenService) GenerateToken(userID string) (string, error) {

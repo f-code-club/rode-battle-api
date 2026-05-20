@@ -48,7 +48,7 @@ func (s *Server) LoginHandler(
 		return nil, err
 	}
 
-	authResponse, err := s.auth.Login(
+	response, err := s.auth.Login(
 		c.Context(),
 		body.Email,
 		body.Password,
@@ -61,5 +61,5 @@ func (s *Server) LoginHandler(
 		}
 	}
 
-	return authResponse, nil
+	return response, nil
 }

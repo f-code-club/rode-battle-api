@@ -69,32 +69,32 @@ func (s *AuthService) Register(ctx context.Context,
 	return nil
 }
 
-func (s *AuthService) Login(ctx context.Context, email string, password string) (AuthResponse, error) {
+func (s *AuthService) Login(ctx context.Context, email string, password string) (*AuthResponse, error) {
 	queries := database.New(s.Pool)
 
 	account, err := queries.GetAccountByEmail(ctx, email)
 	if err != nil {
-		return AuthResponse{}, err
+		return nil, err
 	}
 
 	if account.IsBanned {
-		return AuthResponse{}, ErrAccountBanned
+		return nil, ErrAccountBanned
 	}
 
 	if !account.IsVerified {
-		return AuthResponse{}, ErrAccountNotVerified
+		return nil, ErrAccountNotVerified
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(password)); err != nil {
-		return AuthResponse{}, err
+		return nil, err
 	}
 
 	accessToken, err := s.TokenService.GenerateToken(account.ID.String())
 	if err != nil {
-		return AuthResponse{}, err
+		return nil, err
 	}
 
-	return AuthResponse{
+	return &AuthResponse{
 		AccessToken: accessToken,
 		UserProfile: UserBasicProfile{
 			Email: account.Email,

@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -12,11 +11,6 @@ type TokenService struct {
 	Secret    string
 	ExpiredIn int
 }
-
-var (
-	ErrSigningMethod = errors.New("unexpected signing method")
-	ErrInvalidClaims = errors.New("invalid token claims")
-)
 
 func NewTokenService() (*TokenService, error) {
 	cfg, err := env.ParseAs[Config]()

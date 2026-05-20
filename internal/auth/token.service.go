@@ -9,7 +9,7 @@ import (
 
 type TokenService struct {
 	Secret    string
-	ExpiredIn int
+	ExpiredIn time.Duration
 }
 
 func NewTokenService() (*TokenService, error) {
@@ -27,7 +27,7 @@ func NewTokenService() (*TokenService, error) {
 func (s *TokenService) GenerateToken(userID string) (string, error) {
 	claim := jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(time.Now().
-			Add(time.Duration(s.ExpiredIn) * time.Hour)),
+			Add(s.ExpiredIn)),
 		IssuedAt: jwt.NewNumericDate(time.Now()),
 		Subject:  userID,
 	}

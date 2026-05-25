@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/f-code-club/rode-battle-api/internal/database"
+	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -102,4 +103,8 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 			Role:  account.Role,
 		},
 	}, nil
+}
+
+func (s *AuthService) ParseToken(tokenStr string) (uuid.UUID, error) {
+	return s.TokenService.ParseToken(tokenStr)
 }

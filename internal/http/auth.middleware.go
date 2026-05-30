@@ -28,7 +28,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		}
 
 		tokenStr := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
-		userId, err := s.auth.ParseToken(tokenStr)
+		userId, err := s.auth.TokenService.ParseToken(tokenStr)
 		if err != nil {
 			fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
 				Detail: "invalid token",

@@ -8,15 +8,19 @@ import (
 	"github.com/go-fuego/fuego"
 )
 
+//nolint:unused // will be used by auth middleware context
 type contextKey string
 
 const (
+	//nolint:unused // will be used by auth middleware context
 	authHeaderKey = "Authorization"
-	bearerPrefix  = "Bearer "
-
+	//nolint:unused // will be used by auth middleware context
+	bearerPrefix = "Bearer "
+	//nolint:unused // will be used by auth middleware context
 	userKey contextKey = "user"
 )
 
+//nolint:unused // will be used by auth middleware context
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get(authHeaderKey)

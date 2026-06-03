@@ -36,6 +36,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
 				Detail: "invalid token",
+				Err:    err,
 			})
 			return
 		}

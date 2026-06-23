@@ -46,6 +46,12 @@ FROM accounts
 WHERE email = $1
 `
 
+const getRoleByUserID = `-- name: GetRoleByUserID :one
+SELECT role
+FROM accounts
+WHERE id = $1
+`
+
 type GetAccountByEmailRow struct {
 	ID         uuid.UUID
 	Email      string
@@ -69,4 +75,11 @@ func (q *Queries) GetAccountByEmail(ctx context.Context, email string) (GetAccou
 		&i.IsBanned,
 	)
 	return i, err
+}
+
+func (q *Queries) GetRoleByUserID(ctx context.Context, userID string) (string, error) {
+	row := q.db.QueryRow(ctx, getRoleByUserID, userID)
+	var role string
+	err := row.Scan(&role)
+	return role, err
 }

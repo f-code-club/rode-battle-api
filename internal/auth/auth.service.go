@@ -103,3 +103,17 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 		},
 	}, nil
 }
+
+func (s *AuthService) HasRole(ctx context.Context, userID string, roles ...database.Role) (bool, error) {
+	queries := database.New(s.Pool)
+	userRole, err := queries.GetRoleByUserID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	for _, role := range roles {
+		if userRole == string(role) {
+			return true, nil
+		}
+	}
+	return false, nil
+}

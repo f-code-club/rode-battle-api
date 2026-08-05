@@ -23,4 +23,5 @@ type Account struct {
 	Name     string
 	Password string
 	Role     Role
+	IsBanned bool
 }

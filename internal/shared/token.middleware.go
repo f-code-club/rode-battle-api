@@ -1,29 +1,26 @@
-package http
+package shared
 
 import (
 	"context"
 	"net/http"
 	"strings"
 
+	"github.com/f-code-club/rode-battle-api/internal/shared/headers"
 	"github.com/go-fuego/fuego"
 )
 
-//nolint:unused // will be used by auth middleware context
-type contextKey string
-
 const (
-	//nolint:unused // will be used by auth middleware context
-	authHeaderKey = "Authorization"
-	//nolint:unused // will be used by auth middleware context
 	bearerPrefix = "Bearer "
-	//nolint:unused // will be used by auth middleware context
-	userKey contextKey = "user"
+	AccountIDKey = "id"
 )
 
-//nolint:unused // will be used by auth middleware context
-func (s *Server) authMiddleware(next http.Handler) http.Handler {
+type ParseTokenMiddlewareBuilder struct {
+	Service *TokenService
+}
+
+func (b ParseTokenMiddlewareBuilder) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get(authHeaderKey)
+		authHeader := r.Header.Get(headers.Authorization)
 		if !strings.HasPrefix(authHeader, bearerPrefix) {
 			fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
 				Detail: "missing or invalid Authorization header",
@@ -32,7 +29,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		}
 
 		tokenStr := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
-		userId, err := s.auth.TokenService.ParseToken(tokenStr)
+		userId, err := b.Service.ParseToken(tokenStr)
 		if err != nil {
 			fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
 				Detail: "invalid token",
@@ -40,7 +37,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			})
 			return
 		}
-		ctx := context.WithValue(r.Context(), userKey, userId)
+		ctx := context.WithValue(r.Context(), AccountIDKey, userId)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -13,7 +13,8 @@ import (
 const refreshTokenCookie = "refresh_token"
 
 type Server struct {
-	service service.Service
+	service        service.Service
+	accessTokenSvc *shared.TokenService
 }
 
 func NewServer(
@@ -24,13 +25,11 @@ func NewServer(
 	refreshTokenSvc := shared.NewTokenService(cfg.JWTRefreshSecret, cfg.JWTRefreshExpiredIn)
 	service := service.New(pool, &refreshTokenSvc, accessTokenSvc)
 
-	return Server{service}
+	return Server{service, accessTokenSvc}
 }
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {
-	m := middleware.ParseTokenMiddlewareBuilder{
-		Service: s.service.AccessTokenSvc,
-	}.Middleware
+	m := middleware.ParseTokenMiddlewareBuilder{Service: s.accessTokenSvc}.Middleware
 
 	g := fuego.Group(f, "/auth")
 	fuego.Post(g, "/login", s.Login)

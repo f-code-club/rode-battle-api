@@ -8,5 +8,5 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, err
 		return "", err
 	}
 
-	return s.AccessTokenSvc.GenerateToken(id)
+	return s.accessTokenSvc.GenerateToken(id)
 }

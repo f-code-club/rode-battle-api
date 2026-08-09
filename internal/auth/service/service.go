@@ -8,7 +8,7 @@ import (
 type Service struct {
 	pool            *pgxpool.Pool
 	refreshTokenSvc *shared.TokenService
-	AccessTokenSvc  *shared.TokenService
+	accessTokenSvc  *shared.TokenService
 }
 
 func New(pool *pgxpool.Pool, refreshTokenSvc *shared.TokenService, accessTokenSvc *shared.TokenService) Service {

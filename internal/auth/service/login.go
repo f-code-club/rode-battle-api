@@ -38,7 +38,7 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*To
 		return nil, err
 	}
 
-	accessToken, err := s.AccessTokenSvc.GenerateToken(account.ID)
+	accessToken, err := s.accessTokenSvc.GenerateToken(account.ID)
 	if err != nil {
 		return nil, err
 	}

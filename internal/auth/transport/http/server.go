@@ -1,0 +1,39 @@
+package http
+
+import (
+	"github.com/go-fuego/fuego"
+	"github.com/go-fuego/fuego/option"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/f-code-club/rode-battle-api/internal/auth/service"
+	"github.com/f-code-club/rode-battle-api/internal/shared"
+	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
+)
+
+const refreshTokenCookie = "refresh_token"
+
+type Server struct {
+	service service.Service
+}
+
+func NewServer(
+	cfg *shared.Config,
+	pool *pgxpool.Pool,
+	accessTokenSvc *shared.TokenService,
+) Server {
+	refreshTokenSvc := shared.NewTokenService(cfg.JWTRefreshSecret, cfg.JWTRefreshExpiredIn)
+	service := service.New(pool, &refreshTokenSvc, accessTokenSvc)
+
+	return Server{service}
+}
+
+func (s *Server) RegisterRoutes(f *fuego.Server) {
+	m := middleware.ParseTokenMiddlewareBuilder{
+		Service: s.service.AccessTokenSvc,
+	}.Middleware
+
+	g := fuego.Group(f, "/auth")
+	fuego.Post(g, "/login", s.Login)
+	fuego.Get(g, "/refresh", s.Refresh)
+	fuego.Get(g, "/me", s.Me, option.Middleware(m))
+}

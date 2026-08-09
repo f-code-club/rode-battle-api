@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/f-code-club/rode-battle-api/internal/shared"
 	"github.com/go-fuego/fuego"
+
+	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
+	"github.com/f-code-club/rode-battle-api/internal/shared"
 )
 
 func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
@@ -38,26 +40,18 @@ func build() (*fuego.Server, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	pool, err := shared.NewDatabasePool(cfg.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}
+	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
 
-	tokenService, err := auth.NewTokenService()
-	if err != nil {
-		log.Printf("failed to create token service: %v", err)
-		return
-	}
+	f := shared.NewServer(&cfg)
 
-	authService := auth.NewAuthService(pool, tokenService)
+	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)
+	auth.RegisterRoutes(f)
 
-	s, err := server.NewServer(authService)
-	if err != nil {
-		log.Printf("failed to create new server: %v", err)
-		return
-	}
-	server := s.Build()
+	return f, nil
 }
 
 func main() {

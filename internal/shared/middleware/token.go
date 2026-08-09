@@ -1,12 +1,14 @@
-package shared
+package middleware
 
 import (
 	"context"
 	"net/http"
 	"strings"
 
-	"github.com/f-code-club/rode-battle-api/internal/shared/headers"
 	"github.com/go-fuego/fuego"
+
+	"github.com/f-code-club/rode-battle-api/internal/shared"
+	"github.com/f-code-club/rode-battle-api/internal/shared/headers"
 )
 
 const (
@@ -15,7 +17,7 @@ const (
 )
 
 type ParseTokenMiddlewareBuilder struct {
-	Service *TokenService
+	Service *shared.TokenService
 }
 
 func (b ParseTokenMiddlewareBuilder) Middleware(next http.Handler) http.Handler {

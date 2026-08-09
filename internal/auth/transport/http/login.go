@@ -23,9 +23,8 @@ func (s *Server) Login(c fuego.ContextWithBody[LoginRequest]) (string, error) {
 	}
 
 	c.SetCookie(http.Cookie{
-		Name:     refreshTokenCookie,
-		Value:    tokenPair.RefreshToken,
-		SameSite: http.SameSiteNoneMode,
+		Name:  refreshTokenCookie,
+		Value: tokenPair.RefreshToken,
 	})
 	return tokenPair.AccessToken, nil
 }

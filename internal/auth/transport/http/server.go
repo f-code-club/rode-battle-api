@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-fuego/fuego"
 	"github.com/go-fuego/fuego/option"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,5 +35,8 @@ func (s *Server) RegisterRoutes(f *fuego.Server) {
 	g := fuego.Group(f, "/auth")
 	fuego.Post(g, "/login", s.Login)
 	fuego.Get(g, "/refresh", s.Refresh)
-	fuego.Get(g, "/me", s.Me, option.Middleware(m))
+	fuego.Get(g, "/me", s.Me,
+		option.Middleware(m),
+		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
+	)
 }

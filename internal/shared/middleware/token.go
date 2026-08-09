@@ -11,9 +11,11 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/shared/headers"
 )
 
+type ContextKey string
+
 const (
-	bearerPrefix = "Bearer "
-	AccountIDKey = "id"
+	bearerPrefix            = "Bearer "
+	AccountIDKey ContextKey = "id"
 )
 
 type ParseTokenMiddlewareBuilder struct {

@@ -27,8 +27,5 @@ func (s *Server) RegisterRoutes(f *fuego.Server) {
 	// m := middleware.ParseTokenMiddlewareBuilder{Service: s.accessTokenSvc}.Middleware
 
 	g := fuego.Group(f, "/account")
-	fuego.Post(g, "/generate", s.Generate,
-		// option.Middleware(m),
-		// option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
-	)
+	fuego.Post(g, "/generate", s.Generate) //TODO: add authorization
 }

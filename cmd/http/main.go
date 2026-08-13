@@ -9,11 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/f-code-club/rode-battle-api/internal/auth"
-	"github.com/f-code-club/rode-battle-api/internal/database"
-	server "github.com/f-code-club/rode-battle-api/internal/http"
-
+	"github.com/caarlos0/env/v11"
 	"github.com/go-fuego/fuego"
+
+	account "github.com/f-code-club/rode-battle-api/internal/account/transport/http"
+	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
+	"github.com/f-code-club/rode-battle-api/internal/shared"
 )
 
 func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
@@ -35,28 +36,33 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 	done <- true
 }
 
+func build() (*fuego.Server, error) {
+	cfg, err := env.ParseAs[shared.Config]()
+	if err != nil {
+		return nil, err
+	}
+	pool, err := shared.NewDatabasePool(cfg.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
+
+	f := shared.NewServer(&cfg)
+
+	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)
+	auth.RegisterRoutes(f)
+
+	account := account.NewServer(&cfg, pool, &accessTokenSvc)
+	account.RegisterRoutes(f)
+
+	return f, nil
+}
+
 func main() {
-	pool, err := database.NewPool()
+	server, err := build()
 	if err != nil {
-		log.Printf("failed to init db pool: %v", err)
-		return
+		panic(fmt.Sprintf("failed to build server: %s", err))
 	}
-
-	tokenService, err := auth.NewTokenService()
-	if err != nil {
-		log.Printf("failed to create token service: %v", err)
-		return
-	}
-
-	authService := auth.NewAuthService(pool, tokenService)
-
-	s, err := server.NewServer(authService)
-	if err != nil {
-		log.Printf("failed to create new server: %v", err)
-		return
-	}
-	server := s.Build()
-
 	done := make(chan bool, 1)
 
 	go gracefulShutdown(server, done)

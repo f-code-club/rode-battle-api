@@ -1,20 +1,14 @@
-package database
+package shared
 
 import (
 	"context"
 	"time"
 
-	"github.com/caarlos0/env/v11"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPool() (*pgxpool.Pool, error) {
-	cfg, err := env.ParseAs[Config]()
-	if err != nil {
-		return nil, err
-	}
-
-	pgxConfig, err := pgxpool.ParseConfig(cfg.DatabaseURL)
+func NewDatabasePool(url string) (*pgxpool.Pool, error) {
+	pgxConfig, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, err
 	}

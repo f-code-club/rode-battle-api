@@ -49,7 +49,14 @@ func (s *Service) Generate(
 		return uuid.Nil, errors.Wrap(http.StatusConflict, "account with given email already existed", err)
 	}
 
-	//TODO: send email
+	err = s.mailService.SendSingleMail(
+		email,
+		"Welcome to our platform",
+		fmt.Sprintf("Hello %s, your account has been created successfully.", name),
+	)
+	if err != nil {
+		return uuid.Nil, errors.Wrap(http.StatusInternalServerError, "failed to send welcome email", err)
+	}
 
 	return id, nil
 }

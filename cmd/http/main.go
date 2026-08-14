@@ -56,7 +56,7 @@ func build() (*fuego.Server, error) {
 	mail := mail.NewServer(&cfg, &accessTokenSvc)
 	mail.SendSingleMailRoute(f)
 
-	account := account.NewServer(&cfg, pool, &accessTokenSvc)
+	account := account.NewServer(&cfg, pool, mail.Service, &accessTokenSvc)
 	account.RegisterRoutes(f)
 
 	return f, nil

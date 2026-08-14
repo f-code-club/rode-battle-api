@@ -17,9 +17,9 @@ type Server struct {
 func NewServer(
 	cfg *shared.Config,
 	pool *pgxpool.Pool,
-	mailService mailservice.Service,
 	accessTokenSvc *shared.TokenService,
 ) Server {
+	mailService := mailservice.New(cfg.MailerUsername, cfg.MailerPassword, cfg.MailerHostName, cfg.MailerPortNumber)
 	service := service.New(pool, mailService)
 
 	return Server{service, accessTokenSvc}

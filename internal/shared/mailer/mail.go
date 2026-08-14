@@ -1,8 +1,13 @@
-package service
+package mail
 
-import (
-	"net/smtp"
-)
+import "net/smtp"
+
+type Mailer struct {
+	Username   string
+	Password   string
+	HostName   string
+	PortNumber string
+}
 
 type SendSingleMailRequest struct {
 	To      string `json:"to" validate:"required,email"`
@@ -10,7 +15,11 @@ type SendSingleMailRequest struct {
 	Body    string `json:"body" validate:"required"`
 }
 
-func (s *Service) SendSingleMail(
+func NewMailService(username, password, hostName string, portNumber string) Mailer {
+	return Mailer{username, password, hostName, portNumber}
+}
+
+func (s *Mailer) SendSingleMail(
 	to string,
 	subject string,
 	body string,

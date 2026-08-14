@@ -5,8 +5,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/f-code-club/rode-battle-api/internal/account/service"
-	mailservice "github.com/f-code-club/rode-battle-api/internal/mail/service"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
+	mailservice "github.com/f-code-club/rode-battle-api/internal/shared/mailer"
 )
 
 type Server struct {
@@ -19,7 +19,7 @@ func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
 ) Server {
-	mailService := mailservice.New(cfg.MailerUsername, cfg.MailerPassword, cfg.MailerHostName, cfg.MailerPortNumber)
+	mailService := mailservice.NewMailService(cfg.MailerUsername, cfg.MailerPassword, cfg.MailerHostName, cfg.MailerPortNumber)
 	service := service.New(pool, mailService)
 
 	return Server{service, accessTokenSvc}

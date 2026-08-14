@@ -52,7 +52,16 @@ func (s *Service) Generate(
 	err = s.mailService.SendSingleMail(
 		email,
 		"Welcome to our platform",
-		fmt.Sprintf("Hello %s, your account has been created successfully.", name),
+		fmt.Sprintf(
+			"Hello %s,\n\n"+
+				"Your account has been created successfully.\n\n"+
+				"Email: %s\n"+
+				"Password: %s\n\n"+
+				"Please keep your credentials secure.",
+			name,
+			email,
+			password,
+		),
 	)
 	if err != nil {
 		return uuid.Nil, errors.Wrap(http.StatusInternalServerError, "failed to send welcome email", err)

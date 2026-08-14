@@ -14,6 +14,7 @@ import (
 
 	account "github.com/f-code-club/rode-battle-api/internal/account/transport/http"
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
+	mail "github.com/f-code-club/rode-battle-api/internal/mail/transport/http"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 )
 
@@ -51,6 +52,9 @@ func build() (*fuego.Server, error) {
 
 	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)
 	auth.RegisterRoutes(f)
+
+	mail := mail.NewServer(&cfg, &accessTokenSvc)
+	mail.SendSingleMailRoute(f)
 
 	account := account.NewServer(&cfg, pool, &accessTokenSvc)
 	account.RegisterRoutes(f)

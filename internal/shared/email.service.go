@@ -1,8 +1,8 @@
-package mail
+package shared
 
 import "net/smtp"
 
-type Mailer struct {
+type EmailService struct {
 	Username   string
 	Password   string
 	HostName   string
@@ -15,11 +15,11 @@ type SendSingleMailRequest struct {
 	Body    string `json:"body" validate:"required"`
 }
 
-func NewMailService(username, password, hostName string, portNumber string) Mailer {
-	return Mailer{username, password, hostName, portNumber}
+func NewEmailService(username, password, hostName string, portNumber string) EmailService {
+	return EmailService{username, password, hostName, portNumber}
 }
 
-func (s *Mailer) SendSingleMail(
+func (s *EmailService) SendSingleMail(
 	to string,
 	subject string,
 	body string,

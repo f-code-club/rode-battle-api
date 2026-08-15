@@ -49,7 +49,7 @@ func (s *Service) Generate(
 		return uuid.Nil, errors.Wrap(http.StatusConflict, "account with given email already existed", err)
 	}
 
-	err = s.mailService.SendSingleMail(
+	err = s.emailSvc.SendSingleMail(
 		email,
 		"Welcome to our platform",
 		fmt.Sprintf(

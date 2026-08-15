@@ -6,7 +6,6 @@ import (
 
 	"github.com/f-code-club/rode-battle-api/internal/account/service"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
-	mailservice "github.com/f-code-club/rode-battle-api/internal/shared/mailer"
 )
 
 type Server struct {
@@ -19,8 +18,8 @@ func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
 ) Server {
-	mailService := mailservice.NewMailService(cfg.MailerUsername, cfg.MailerPassword, cfg.MailerHostName, cfg.MailerPortNumber)
-	service := service.New(pool, mailService)
+	emailSvc := shared.NewEmailService(cfg.MailerUsername, cfg.MailerPassword, cfg.MailerHostName, cfg.MailerPortNumber)
+	service := service.New(pool, emailSvc)
 
 	return Server{service, accessTokenSvc}
 }

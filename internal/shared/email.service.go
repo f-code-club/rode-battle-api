@@ -9,12 +9,6 @@ type EmailService struct {
 	PortNumber string
 }
 
-type SendSingleMailRequest struct {
-	To      string `json:"to" validate:"required,email"`
-	Subject string `json:"subject" validate:"required"`
-	Body    string `json:"body" validate:"required"`
-}
-
 func NewEmailService(username, password, hostName string, portNumber string) EmailService {
 	return EmailService{username, password, hostName, portNumber}
 }

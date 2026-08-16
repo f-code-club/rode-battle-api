@@ -18,7 +18,8 @@ func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
 ) Server {
-	service := service.New(pool)
+	emailSvc := shared.NewEmailService(cfg.EmailUsername, cfg.EmailPassword, cfg.EmailHost, cfg.EmailPort)
+	service := service.New(pool, emailSvc)
 
 	return Server{service, accessTokenSvc}
 }

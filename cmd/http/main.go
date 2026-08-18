@@ -13,7 +13,7 @@ import (
 	"github.com/go-fuego/fuego"
 	_ "github.com/joho/godotenv/autoload"
 
-	account "github.com/f-code-club/rode-battle-api/internal/account/transport/http"
+	account "github.com/f-code-club/rode-battle-api/internal/accounts/transport/http"
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 )

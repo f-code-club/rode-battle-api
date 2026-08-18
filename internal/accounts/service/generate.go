@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/f-code-club/rode-battle-api/internal/account/repository"
+	"github.com/f-code-club/rode-battle-api/internal/accounts/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
 )
 

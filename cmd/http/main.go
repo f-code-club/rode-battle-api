@@ -11,6 +11,7 @@ import (
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-fuego/fuego"
+	_ "github.com/joho/godotenv/autoload"
 
 	account "github.com/f-code-club/rode-battle-api/internal/account/transport/http"
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"

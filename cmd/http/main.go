@@ -49,12 +49,13 @@ func build() (*fuego.Server, error) {
 	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
 
 	f := shared.NewServer(&cfg)
+	api := fuego.Group(f, "/api/v1")
 
 	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)
-	auth.RegisterRoutes(f)
+	auth.RegisterRoutes(api)
 
 	account := account.NewServer(&cfg, pool, &accessTokenSvc)
-	account.RegisterRoutes(f)
+	account.RegisterRoutes(api)
 
 	return f, nil
 }

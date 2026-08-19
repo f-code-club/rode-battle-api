@@ -29,8 +29,8 @@ type Ranking struct {
 type submissionRow = repository.GetContestSubmissionsForRankingRow
 
 const (
-	PENALTY_PER_SUBMISSION = 10
-	SCORE_PER_PROBLEM      = 1
+	PenaltyPerSubmission = 10
+	ScorePerProblem      = 1
 )
 
 func (s *Service) GetRank(
@@ -57,20 +57,7 @@ func (s *Service) GetRank(
 		)
 	}
 
-	accountNames, grouped := groupSubmissions(rows)
-
-	result := make([]Ranking, 0, len(grouped))
-
-	for accountID, problems := range grouped {
-		details, score, penalty := buildRanking(problems, contestTime.StartTime.Time)
-
-		result = append(result, Ranking{
-			Name:    accountNames[accountID],
-			Score:   score,
-			Penalty: penalty,
-			Details: details,
-		})
-	}
+	result := buildRankings(rows, contestTime.StartTime.Time)
 
 	sort.Slice(result, func(i, j int) bool {
 		if result[i].Score != result[j].Score {
@@ -83,46 +70,54 @@ func (s *Service) GetRank(
 	return result, nil
 }
 
-func groupSubmissions(
-	rows []submissionRow,
-) (map[uuid.UUID]string, map[uuid.UUID]map[uuid.UUID][]submissionRow) {
-	accountNames := make(map[uuid.UUID]string)
-	grouped := make(map[uuid.UUID]map[uuid.UUID][]submissionRow)
+func buildRankings(rows []submissionRow, contestStart time.Time) []Ranking {
+	result := make([]Ranking, 0)
 
-	for _, row := range rows {
-		if _, ok := grouped[row.AccountID]; !ok {
-			grouped[row.AccountID] = make(map[uuid.UUID][]submissionRow)
-			accountNames[row.AccountID] = row.AccountName
+	for i := 0; i < len(rows); {
+		accountID := rows[i].AccountID
+		accountName := rows[i].AccountName
+
+		accountEnd := i
+		for accountEnd < len(rows) && rows[accountEnd].AccountID == accountID {
+			accountEnd++
 		}
 
-		grouped[row.AccountID][row.ProblemID] = append(
-			grouped[row.AccountID][row.ProblemID],
-			row,
-		)
+		details, score, penalty := buildAccountRanking(rows[i:accountEnd], contestStart)
+
+		result = append(result, Ranking{
+			Name:    accountName,
+			Score:   score,
+			Penalty: penalty,
+			Details: details,
+		})
+
+		i = accountEnd
 	}
 
-	return accountNames, grouped
+	return result
 }
 
-func buildRanking(
-	problems map[uuid.UUID][]submissionRow,
-	contestStart time.Time,
-) ([]Detail, float64, float64) {
-	details := make([]Detail, 0, len(problems))
+func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail, float64, float64) {
+	details := make([]Detail, 0)
 
 	var totalScore, totalPenalty float64
 
-	for _, submissions := range problems {
-		detail, penalty := calculateProblemResult(submissions, contestStart)
+	for i := 0; i < len(rows); {
+		problemID := rows[i].ProblemID
+
+		problemEnd := i
+		for problemEnd < len(rows) && rows[problemEnd].ProblemID == problemID {
+			problemEnd++
+		}
+
+		detail, penalty := calculateProblemResult(rows[i:problemEnd], contestStart)
 
 		details = append(details, detail)
 		totalScore += float64(detail.Score)
 		totalPenalty += penalty
-	}
 
-	sort.Slice(details, func(i, j int) bool {
-		return details[i].ProblemPosition < details[j].ProblemPosition
-	})
+		i = problemEnd
+	}
 
 	return details, totalScore, totalPenalty
 }
@@ -131,10 +126,6 @@ func calculateProblemResult(
 	submissions []submissionRow,
 	contestStart time.Time,
 ) (Detail, float64) {
-	sort.Slice(submissions, func(i, j int) bool {
-		return submissions[i].CreatedAt.Time.Before(submissions[j].CreatedAt.Time)
-	})
-
 	truncated, hasAccepted := truncateAtFirstAccepted(submissions)
 
 	last := truncated[len(truncated)-1]
@@ -143,7 +134,7 @@ func calculateProblemResult(
 
 	score := 0
 	if hasAccepted {
-		score = SCORE_PER_PROBLEM
+		score = ScorePerProblem
 	}
 
 	detail := Detail{
@@ -185,7 +176,7 @@ func calculatePenalty(
 	contestStart time.Time,
 ) float64 {
 	if language == repository.LanguageHtml {
-		return float64(submissionCount * PENALTY_PER_SUBMISSION)
+		return float64(submissionCount * PenaltyPerSubmission)
 	}
 
 	if score == 0 {
@@ -194,5 +185,5 @@ func calculatePenalty(
 
 	minutes := lastSubmit.Sub(contestStart).Minutes()
 
-	return minutes + float64(submissionCount*PENALTY_PER_SUBMISSION)
+	return minutes + float64(submissionCount*PenaltyPerSubmission)
 }

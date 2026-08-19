@@ -20,9 +20,7 @@ SELECT
     p.position AS problem_position,
     s.language,
     s.verdict,
-    s.created_at,
-    c.start_time AS contest_start_time,
-    c.end_time AS contest_end_time
+    s.created_at
 FROM submissions s
 INNER JOIN problems p ON p.id = s.problem_id
 INNER JOIN contests c ON c.id = p.contest_id
@@ -35,15 +33,13 @@ ORDER BY a.id, p.position, s.created_at
 `
 
 type GetContestSubmissionsForRankingRow struct {
-	AccountID        uuid.UUID
-	AccountName      string
-	ProblemID        uuid.UUID
-	ProblemPosition  *int32
-	Language         Language
-	Verdict          *Verdict
-	CreatedAt        pgtype.Timestamptz
-	ContestStartTime pgtype.Timestamptz
-	ContestEndTime   pgtype.Timestamptz
+	AccountID       uuid.UUID
+	AccountName     string
+	ProblemID       uuid.UUID
+	ProblemPosition *int32
+	Language        Language
+	Verdict         *Verdict
+	CreatedAt       pgtype.Timestamptz
 }
 
 func (q *Queries) GetContestSubmissionsForRanking(ctx context.Context, contestID uuid.UUID) ([]GetContestSubmissionsForRankingRow, error) {
@@ -63,8 +59,6 @@ func (q *Queries) GetContestSubmissionsForRanking(ctx context.Context, contestID
 			&i.Language,
 			&i.Verdict,
 			&i.CreatedAt,
-			&i.ContestStartTime,
-			&i.ContestEndTime,
 		); err != nil {
 			return nil, err
 		}
@@ -74,4 +68,24 @@ func (q *Queries) GetContestSubmissionsForRanking(ctx context.Context, contestID
 		return nil, err
 	}
 	return items, nil
+}
+
+const getContestTimeRange = `-- name: GetContestTimeRange :one
+SELECT
+    start_time,
+    end_time
+FROM contests
+WHERE id = $1
+`
+
+type GetContestTimeRangeRow struct {
+	StartTime pgtype.Timestamptz
+	EndTime   pgtype.Timestamptz
+}
+
+func (q *Queries) GetContestTimeRange(ctx context.Context, contestID uuid.UUID) (GetContestTimeRangeRow, error) {
+	row := q.db.QueryRow(ctx, getContestTimeRange, contestID)
+	var i GetContestTimeRangeRow
+	err := row.Scan(&i.StartTime, &i.EndTime)
+	return i, err
 }

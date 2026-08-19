@@ -39,6 +39,15 @@ func (s *Service) GetRank(
 ) ([]Ranking, error) {
 	queries := repository.New(s.pool)
 
+	contestTime, err := queries.GetContestTimeRange(ctx, contestID)
+	if err != nil {
+		return nil, errors.Wrap(
+			http.StatusInternalServerError,
+			"failed to get contest time range",
+			err,
+		)
+	}
+
 	rows, err := queries.GetContestSubmissionsForRanking(ctx, contestID)
 	if err != nil {
 		return nil, errors.Wrap(
@@ -53,7 +62,7 @@ func (s *Service) GetRank(
 	result := make([]Ranking, 0, len(grouped))
 
 	for accountID, problems := range grouped {
-		details, score, penalty := buildRanking(problems)
+		details, score, penalty := buildRanking(problems, contestTime.StartTime.Time)
 
 		result = append(result, Ranking{
 			Name:    accountNames[accountID],
@@ -97,13 +106,14 @@ func groupSubmissions(
 
 func buildRanking(
 	problems map[uuid.UUID][]submissionRow,
+	contestStart time.Time,
 ) ([]Detail, float64, float64) {
 	details := make([]Detail, 0, len(problems))
 
 	var totalScore, totalPenalty float64
 
 	for _, submissions := range problems {
-		detail, penalty := calculateProblemResult(submissions)
+		detail, penalty := calculateProblemResult(submissions, contestStart)
 
 		details = append(details, detail)
 		totalScore += float64(detail.Score)
@@ -119,6 +129,7 @@ func buildRanking(
 
 func calculateProblemResult(
 	submissions []submissionRow,
+	contestStart time.Time,
 ) (Detail, float64) {
 	sort.Slice(submissions, func(i, j int) bool {
 		return submissions[i].CreatedAt.Time.Before(submissions[j].CreatedAt.Time)
@@ -148,7 +159,7 @@ func calculateProblemResult(
 		score,
 		submissionCount,
 		last.CreatedAt.Time,
-		last.ContestStartTime.Time,
+		contestStart,
 	)
 
 	return detail, penalty

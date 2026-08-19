@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"math"
 	"net/http"
 	"sort"
 	"time"
@@ -126,6 +127,41 @@ func calculateProblemResult(
 	submissions []submissionRow,
 	contestStart time.Time,
 ) (Detail, float64) {
+	if submissions[0].Language == repository.LanguageHtml {
+		return calculateCssProblemResult(submissions)
+	}
+
+	return calculateAlgorithmProblemResult(submissions, contestStart)
+}
+
+func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
+	last := submissions[len(submissions)-1]
+	submissionCount := len(submissions)
+
+	var best float32
+	for _, sub := range submissions {
+		if sub.Score != nil && *sub.Score > best {
+			best = *sub.Score
+		}
+	}
+
+	detail := Detail{
+		ProblemID:       last.ProblemID,
+		ProblemPosition: int(*last.ProblemPosition),
+		SubmissionCount: submissionCount,
+		Score:           int(math.Round(float64(best))),
+		LastSubmit:      last.CreatedAt.Time,
+	}
+
+	penalty := float64(submissionCount * PenaltyPerSubmission)
+
+	return detail, penalty
+}
+
+func calculateAlgorithmProblemResult(
+	submissions []submissionRow,
+	contestStart time.Time,
+) (Detail, float64) {
 	truncated, hasAccepted := truncateAtFirstAccepted(submissions)
 
 	last := truncated[len(truncated)-1]
@@ -137,21 +173,21 @@ func calculateProblemResult(
 		score = ScorePerProblem
 	}
 
+	lastSubmit := last.CreatedAt.Time
+
 	detail := Detail{
 		ProblemID:       last.ProblemID,
 		ProblemPosition: int(*last.ProblemPosition),
 		SubmissionCount: submissionCount,
 		Score:           score,
-		LastSubmit:      last.CreatedAt.Time,
+		LastSubmit:      lastSubmit,
 	}
 
-	penalty := calculatePenalty(
-		last.Language,
-		score,
-		submissionCount,
-		last.CreatedAt.Time,
-		contestStart,
-	)
+	penalty := 0.0
+	if hasAccepted {
+		minutes := lastSubmit.Sub(contestStart).Minutes()
+		penalty = minutes + float64(submissionCount*PenaltyPerSubmission)
+	}
 
 	return detail, penalty
 }
@@ -166,24 +202,4 @@ func truncateAtFirstAccepted(
 	}
 
 	return submissions, false
-}
-
-func calculatePenalty(
-	language repository.Language,
-	score int,
-	submissionCount int,
-	lastSubmit time.Time,
-	contestStart time.Time,
-) float64 {
-	if language == repository.LanguageHtml {
-		return float64(submissionCount * PenaltyPerSubmission)
-	}
-
-	if score == 0 {
-		return 0
-	}
-
-	minutes := lastSubmit.Sub(contestStart).Minutes()
-
-	return minutes + float64(submissionCount*PenaltyPerSubmission)
 }

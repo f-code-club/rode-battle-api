@@ -63,7 +63,13 @@ func (s *Service) GetRank(
 		})
 	}
 
-	sortRankings(result)
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Score != result[j].Score {
+			return result[i].Score > result[j].Score
+		}
+
+		return result[i].Penalty < result[j].Penalty
+	})
 
 	return result, nil
 }
@@ -131,7 +137,7 @@ func calculateProblemResult(
 
 	detail := Detail{
 		ProblemID:       last.ProblemID,
-		ProblemPosition: intValue(last.ProblemPosition),
+		ProblemPosition: int(*last.ProblemPosition),
 		SubmissionCount: submissionCount,
 		Score:           score,
 		LastSubmit:      last.CreatedAt.Time,
@@ -178,22 +184,4 @@ func calculatePenalty(
 	minutes := lastSubmit.Sub(contestStart).Minutes()
 
 	return minutes + float64(submissionCount*PENALTY_PER_SUBMISSION)
-}
-
-func sortRankings(rankings []Ranking) {
-	sort.Slice(rankings, func(i, j int) bool {
-		if rankings[i].Score != rankings[j].Score {
-			return rankings[i].Score > rankings[j].Score
-		}
-
-		return rankings[i].Penalty < rankings[j].Penalty
-	})
-}
-
-func intValue(value *int32) int {
-	if value == nil {
-		return 0
-	}
-
-	return int(*value)
 }

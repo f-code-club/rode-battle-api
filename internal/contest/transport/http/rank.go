@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) Rank(c fuego.ContextNoBody) ([]service.Ranking, error) {
+func (s *Server) GetRank(c fuego.ContextNoBody) ([]service.Ranking, error) {
 	id := c.PathParam("id")
 
 	fmt.Println(id)
@@ -18,5 +18,5 @@ func (s *Server) Rank(c fuego.ContextNoBody) ([]service.Ranking, error) {
 		return nil, err
 	}
 
-	return s.service.Rank(c.Context(), contestID)
+	return s.service.GetRank(c.Context(), contestID)
 }

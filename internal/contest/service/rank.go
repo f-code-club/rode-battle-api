@@ -33,7 +33,7 @@ const (
 	SCORE_PER_PROBLEM      = 1
 )
 
-func (s *Service) Rank(
+func (s *Service) GetRank(
 	ctx context.Context,
 	contestID uuid.UUID,
 ) ([]Ranking, error) {

@@ -20,6 +20,7 @@ SELECT
     p.position AS problem_position,
     s.language,
     s.verdict,
+    s.score,
     s.created_at
 FROM submissions s
 INNER JOIN problems p ON p.id = s.problem_id
@@ -39,6 +40,7 @@ type GetContestSubmissionsForRankingRow struct {
 	ProblemPosition *int32
 	Language        Language
 	Verdict         *Verdict
+	Score           *float32
 	CreatedAt       pgtype.Timestamptz
 }
 
@@ -58,6 +60,7 @@ func (q *Queries) GetContestSubmissionsForRanking(ctx context.Context, contestID
 			&i.ProblemPosition,
 			&i.Language,
 			&i.Verdict,
+			&i.Score,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

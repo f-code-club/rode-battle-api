@@ -6,6 +6,7 @@ SELECT
     p.position AS problem_position,
     s.language,
     s.verdict,
+    s.score,
     s.created_at
 FROM submissions s
 INNER JOIN problems p ON p.id = s.problem_id

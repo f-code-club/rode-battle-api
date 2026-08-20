@@ -56,7 +56,7 @@ func build() (*fuego.Server, error) {
 	account := account.NewServer(&cfg, pool, &accessTokenSvc)
 	account.RegisterRoutes(f)
 
-	contest := contest.NewServer(pool, &accessTokenSvc)
+	contest := contest.NewServer(pool)
 	contest.RegisterRoutes(f)
 
 	return f, nil

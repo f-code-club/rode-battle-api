@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getContestSubmissionsForRanking = `-- name: GetContestSubmissionsForRanking :many
+const getContestSubmissions = `-- name: GetContestSubmissions :many
 SELECT
     a.id AS account_id,
     a.name AS account_name,
@@ -33,7 +33,7 @@ WHERE p.contest_id = $1
 ORDER BY a.id, p.position, s.created_at
 `
 
-type GetContestSubmissionsForRankingRow struct {
+type GetContestSubmissionsRow struct {
 	AccountID       uuid.UUID
 	AccountName     string
 	ProblemID       uuid.UUID
@@ -44,15 +44,15 @@ type GetContestSubmissionsForRankingRow struct {
 	CreatedAt       pgtype.Timestamptz
 }
 
-func (q *Queries) GetContestSubmissionsForRanking(ctx context.Context, contestID uuid.UUID) ([]GetContestSubmissionsForRankingRow, error) {
-	rows, err := q.db.Query(ctx, getContestSubmissionsForRanking, contestID)
+func (q *Queries) GetContestSubmissions(ctx context.Context, contestID uuid.UUID) ([]GetContestSubmissionsRow, error) {
+	rows, err := q.db.Query(ctx, getContestSubmissions, contestID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetContestSubmissionsForRankingRow
+	var items []GetContestSubmissionsRow
 	for rows.Next() {
-		var i GetContestSubmissionsForRankingRow
+		var i GetContestSubmissionsRow
 		if err := rows.Scan(
 			&i.AccountID,
 			&i.AccountName,

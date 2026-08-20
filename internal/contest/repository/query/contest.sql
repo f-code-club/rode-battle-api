@@ -1,4 +1,4 @@
--- name: GetContestSubmissionsForRanking :many
+-- name: GetContestSubmissions :many
 SELECT
     a.id AS account_id,
     a.name AS account_name,

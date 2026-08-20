@@ -27,7 +27,7 @@ type Ranking struct {
 	Details []Detail `json:"details"`
 }
 
-type submissionRow = repository.GetContestSubmissionsForRankingRow
+type submissionRow = repository.GetContestSubmissionsRow
 
 const (
 	PenaltyPerSubmission = 10
@@ -49,7 +49,7 @@ func (s *Service) GetRank(
 		)
 	}
 
-	rows, err := queries.GetContestSubmissionsForRanking(ctx, contestID)
+	rows, err := queries.GetContestSubmissions(ctx, contestID)
 	if err != nil {
 		return nil, errors.Wrap(
 			http.StatusInternalServerError,

@@ -14,6 +14,8 @@ type Language = repository.Language
 
 type Verdict = repository.Verdict
 
+type GetSubmitHistory = repository.GetSubmitHistoryParams
+
 type Problem struct {
 	Position    *int32     `json:"position"`
 	Name        string     `json:"name"`
@@ -55,10 +57,13 @@ func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error
 	}, nil
 }
 
-func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID) ([]ProblemHistory, error) {
+func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID, accountID uuid.UUID) ([]ProblemHistory, error) {
 	queries := repository.New(s.pool)
 
-	rows, err := queries.GetSubmitHistory(ctx, problemID)
+	rows, err := queries.GetSubmitHistory(ctx, GetSubmitHistory{
+		ProblemID: problemID,
+		AccountID: accountID,
+	})
 	if err != nil {
 		return nil, apperr.Wrap(http.StatusBadRequest, "Problem not found", err)
 	}

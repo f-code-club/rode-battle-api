@@ -21,7 +21,7 @@ func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
 ) Server {
-	service := service.New(pool, accessTokenSvc)
+	service := service.New(pool)
 
 	return Server{service, accessTokenSvc}
 }

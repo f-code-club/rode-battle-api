@@ -1,15 +1,13 @@
 package service
 
 import (
-	"github.com/f-code-club/rode-battle-api/internal/shared"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Service struct {
-	pool           *pgxpool.Pool
-	accessTokenSvc *shared.TokenService
+	pool *pgxpool.Pool
 }
 
-func New(pool *pgxpool.Pool, accessTokenSvc *shared.TokenService) Service {
-	return Service{pool, accessTokenSvc}
+func New(pool *pgxpool.Pool) Service {
+	return Service{pool}
 }

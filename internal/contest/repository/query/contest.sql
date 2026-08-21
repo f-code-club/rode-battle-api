@@ -24,3 +24,12 @@ SELECT
     end_time
 FROM contests
 WHERE id = @contest_id;
+
+-- name: GetContests :many
+SELECT
+    id,
+    name,
+    start_time AS start,
+    end_time AS end
+FROM contests
+ORDER BY start_time;

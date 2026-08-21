@@ -20,7 +20,7 @@ func NewServer(
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {
 
-	g := fuego.Group(f, "/contest")
+	g := fuego.Group(f, "/contests")
 
 	fuego.Get(g, "/{id}/rank", s.GetRank)
 }

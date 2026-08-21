@@ -7,10 +7,11 @@ import (
 
 	"github.com/f-code-club/rode-battle-api/internal/contest/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
+	"github.com/google/uuid"
 )
 
 type Contest struct {
-	ID    string    `json:"id"`
+	ID    uuid.UUID `json:"id"`
 	Name  string    `json:"name"`
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
@@ -33,7 +34,7 @@ func (s *Service) ListContests(
 	result := make([]Contest, 0, len(contests))
 	for _, c := range contests {
 		result = append(result, Contest{
-			ID:    c.ID.String(),
+			ID:    c.ID,
 			Name:  c.Name,
 			Start: c.Start.Time,
 			End:   c.End.Time,

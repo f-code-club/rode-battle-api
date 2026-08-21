@@ -31,7 +31,10 @@ func (s *Server) RegisterRoutes(f *fuego.Server) {
 
 	g := fuego.Group(f, "/problems")
 	fuego.Get(g, "/{id}", s.GetProblem)
-	fuego.Get(g, "/{id}/history", s.GetSubmitHistory)
+	fuego.Get(g, "/{id}/history", s.GetSubmitHistory,
+		option.Middleware(m),
+		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
+	)
 	fuego.Post(g, "/{id}/submit", s.CreateSubmission,
 		option.Middleware(m),
 		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),

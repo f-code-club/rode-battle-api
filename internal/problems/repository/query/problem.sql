@@ -7,8 +7,3 @@ WHERE id = @id;
 SELECT pl.language
 FROM problem_languages pl
 WHERE problem_id = @problem_id;
-
--- name: GetSubmitHistory :many
-SELECT s.id, s.language, s.code, s.verdict, s.score, s.created_at
-FROM submissions s
-WHERE problem_id = @problem_id;

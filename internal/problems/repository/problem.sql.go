@@ -7,7 +7,6 @@ package repository
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -58,48 +57,6 @@ func (q *Queries) GetProblemLanguages(ctx context.Context, problemID uuid.UUID) 
 			return nil, err
 		}
 		items = append(items, language)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getSubmitHistory = `-- name: GetSubmitHistory :many
-SELECT s.id, s.language, s.code, s.verdict, s.score, s.created_at
-FROM submissions s
-WHERE problem_id = $1
-`
-
-type GetSubmitHistoryRow struct {
-	ID        uuid.UUID
-	Language  Language
-	Code      string
-	Verdict   *Verdict
-	Score     *float32
-	CreatedAt time.Time
-}
-
-func (q *Queries) GetSubmitHistory(ctx context.Context, problemID uuid.UUID) ([]GetSubmitHistoryRow, error) {
-	rows, err := q.db.Query(ctx, getSubmitHistory, problemID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetSubmitHistoryRow
-	for rows.Next() {
-		var i GetSubmitHistoryRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Language,
-			&i.Code,
-			&i.Verdict,
-			&i.Score,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

@@ -92,3 +92,45 @@ func (q *Queries) GetContestTimeRange(ctx context.Context, contestID uuid.UUID) 
 	err := row.Scan(&i.StartTime, &i.EndTime)
 	return i, err
 }
+
+const getContests = `-- name: GetContests :many
+SELECT
+    id,
+    name,
+    start_time AS start,
+    end_time AS end
+FROM contests
+ORDER BY start_time
+`
+
+type GetContestsRow struct {
+	ID    uuid.UUID
+	Name  string
+	Start pgtype.Timestamptz
+	End   pgtype.Timestamptz
+}
+
+func (q *Queries) GetContests(ctx context.Context) ([]GetContestsRow, error) {
+	rows, err := q.db.Query(ctx, getContests)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetContestsRow
+	for rows.Next() {
+		var i GetContestsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Start,
+			&i.End,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

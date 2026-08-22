@@ -15,6 +15,7 @@ import (
 
 	account "github.com/f-code-club/rode-battle-api/internal/accounts/transport/http"
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
+	contest "github.com/f-code-club/rode-battle-api/internal/contest/transport/http"
 	problem "github.com/f-code-club/rode-battle-api/internal/problems/transport/http"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 )
@@ -60,6 +61,9 @@ func build() (*fuego.Server, error) {
 
 	problem := problem.NewServer(&cfg, pool, &accessTokenSvc)
 	problem.RegisterRoutes(api)
+
+	contest := contest.NewServer(pool)
+	contest.RegisterRoutes(f)
 
 	return f, nil
 }

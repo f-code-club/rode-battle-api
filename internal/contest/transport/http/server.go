@@ -24,4 +24,5 @@ func (s *Server) RegisterRoutes(f *fuego.Server) {
 
 	fuego.Get(g, "/{id}/rank", s.GetRank)
 	fuego.Get(g, "", s.ListContests)
+	fuego.Get(g, "/{id}", s.GetContestDetail)
 }

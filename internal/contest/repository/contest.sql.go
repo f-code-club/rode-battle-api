@@ -12,6 +12,71 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getContestByID = `-- name: GetContestByID :one
+SELECT 
+    id, 
+    name, 
+    start_time AS start, 
+    end_time AS end
+FROM contests
+WHERE id = $1
+`
+
+type GetContestByIDRow struct {
+	ID    uuid.UUID
+	Name  string
+	Start pgtype.Timestamptz
+	End   pgtype.Timestamptz
+}
+
+func (q *Queries) GetContestByID(ctx context.Context, id uuid.UUID) (GetContestByIDRow, error) {
+	row := q.db.QueryRow(ctx, getContestByID, id)
+	var i GetContestByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Start,
+		&i.End,
+	)
+	return i, err
+}
+
+const getContestProblems = `-- name: GetContestProblems :many
+SELECT 
+    id, 
+    position, 
+    name
+FROM problems
+WHERE contest_id = $1
+ORDER BY position ASC
+`
+
+type GetContestProblemsRow struct {
+	ID       uuid.UUID
+	Position *int32
+	Name     string
+}
+
+func (q *Queries) GetContestProblems(ctx context.Context, contestID uuid.UUID) ([]GetContestProblemsRow, error) {
+	rows, err := q.db.Query(ctx, getContestProblems, contestID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetContestProblemsRow
+	for rows.Next() {
+		var i GetContestProblemsRow
+		if err := rows.Scan(&i.ID, &i.Position, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getContestSubmissions = `-- name: GetContestSubmissions :many
 SELECT
     a.id AS account_id,

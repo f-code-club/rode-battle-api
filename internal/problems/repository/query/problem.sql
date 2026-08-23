@@ -7,3 +7,12 @@ WHERE id = @id;
 SELECT pl.language
 FROM problem_languages pl
 WHERE problem_id = @problem_id;
+
+-- name: GetProblemsByContest :many
+SELECT 
+    id,
+    position,
+    name
+FROM problems
+WHERE contest_id = @contest_id
+ORDER BY position ASC;

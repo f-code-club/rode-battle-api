@@ -41,42 +41,6 @@ func (q *Queries) GetContest(ctx context.Context, contestID uuid.UUID) (GetConte
 	return i, err
 }
 
-const getContestProblems = `-- name: GetContestProblems :many
-SELECT 
-    id,
-    position,
-    name
-FROM problems
-WHERE contest_id = $1
-ORDER BY position ASC
-`
-
-type GetContestProblemsRow struct {
-	ID       uuid.UUID
-	Position *int32
-	Name     string
-}
-
-func (q *Queries) GetContestProblems(ctx context.Context, contestID uuid.UUID) ([]GetContestProblemsRow, error) {
-	rows, err := q.db.Query(ctx, getContestProblems, contestID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetContestProblemsRow
-	for rows.Next() {
-		var i GetContestProblemsRow
-		if err := rows.Scan(&i.ID, &i.Position, &i.Name); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getContestSubmissions = `-- name: GetContestSubmissions :many
 SELECT
     a.id AS account_id,

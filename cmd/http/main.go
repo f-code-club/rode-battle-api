@@ -13,9 +13,10 @@ import (
 	"github.com/go-fuego/fuego"
 	_ "github.com/joho/godotenv/autoload"
 
-	account "github.com/f-code-club/rode-battle-api/internal/account/transport/http"
+	account "github.com/f-code-club/rode-battle-api/internal/accounts/transport/http"
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
 	contest "github.com/f-code-club/rode-battle-api/internal/contest/transport/http"
+	problem "github.com/f-code-club/rode-battle-api/internal/problems/transport/http"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 )
 
@@ -50,12 +51,16 @@ func build() (*fuego.Server, error) {
 	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
 
 	f := shared.NewServer(&cfg)
+	api := fuego.Group(f, "/api/v1")
 
 	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)
-	auth.RegisterRoutes(f)
+	auth.RegisterRoutes(api)
 
 	account := account.NewServer(&cfg, pool, &accessTokenSvc)
-	account.RegisterRoutes(f)
+	account.RegisterRoutes(api)
+
+	problem := problem.NewServer(&cfg, pool, &accessTokenSvc)
+	problem.RegisterRoutes(api)
 
 	contest := contest.NewServer(pool)
 	contest.RegisterRoutes(f)

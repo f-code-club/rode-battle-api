@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	contestrepo "github.com/f-code-club/rode-battle-api/internal/contest/repository"
+	contestrepo "github.com/f-code-club/rode-battle-api/internal/contests/repository"
 	problemrepo "github.com/f-code-club/rode-battle-api/internal/problems/repository"
 	apperr "github.com/f-code-club/rode-battle-api/internal/shared/errors"
 	"github.com/google/uuid"

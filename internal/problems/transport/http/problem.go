@@ -11,22 +11,22 @@ import (
 func (s *Server) GetProblem(c fuego.ContextNoBody) (*service.Problem, error) {
 	id := c.PathParam("id")
 
-	problemId, err := uuid.Parse(id)
+	problemID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fuego.BadRequestError{Title: "Invalid uuid", Err: err}
 	}
 
-	return s.service.GetProblem(c.Context(), problemId)
+	return s.service.GetProblem(c.Context(), problemID)
 }
 
 func (s *Server) GetSubmitHistory(c fuego.ContextNoBody) ([]service.ProblemHistory, error) {
 	id := c.PathParam("id")
-	accountId := c.Context().Value(middleware.AccountIDKey).(uuid.UUID)
+	accountID := c.Context().Value(middleware.AccountIDKey).(uuid.UUID)
 
-	problemId, err := uuid.Parse(id)
+	problemID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fuego.BadRequestError{Title: "Invalid uuid", Err: err}
 	}
 
-	return s.service.GetSubmitHistory(c.Context(), problemId, accountId)
+	return s.service.GetSubmitHistory(c.Context(), problemID, accountID)
 }

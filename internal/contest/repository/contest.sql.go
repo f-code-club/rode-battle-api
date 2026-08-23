@@ -12,26 +12,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getContestByID = `-- name: GetContestByID :one
+const getContest = `-- name: GetContest :one
 SELECT 
-    id, 
-    name, 
-    start_time AS start, 
+    id,
+    name,
+    start_time AS start,
     end_time AS end
 FROM contests
 WHERE id = $1
 `
 
-type GetContestByIDRow struct {
+type GetContestRow struct {
 	ID    uuid.UUID
 	Name  string
 	Start pgtype.Timestamptz
 	End   pgtype.Timestamptz
 }
 
-func (q *Queries) GetContestByID(ctx context.Context, id uuid.UUID) (GetContestByIDRow, error) {
-	row := q.db.QueryRow(ctx, getContestByID, id)
-	var i GetContestByIDRow
+func (q *Queries) GetContest(ctx context.Context, contestID uuid.UUID) (GetContestRow, error) {
+	row := q.db.QueryRow(ctx, getContest, contestID)
+	var i GetContestRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -43,8 +43,8 @@ func (q *Queries) GetContestByID(ctx context.Context, id uuid.UUID) (GetContestB
 
 const getContestProblems = `-- name: GetContestProblems :many
 SELECT 
-    id, 
-    position, 
+    id,
+    position,
     name
 FROM problems
 WHERE contest_id = $1

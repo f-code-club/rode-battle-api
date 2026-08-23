@@ -32,7 +32,7 @@ func (s *Service) GetContestDetail(
 ) (ContestDetail, error) {
 	queries := repository.New(s.pool)
 
-	contest, err := queries.GetContestByID(ctx, contestID)
+	contest, err := queries.GetContest(ctx, contestID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ContestDetail{}, sharederrors.Wrap(

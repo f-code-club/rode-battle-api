@@ -34,7 +34,7 @@ SELECT
 FROM contests
 ORDER BY start_time;
 
--- name: GetContestByID :one
+-- name: GetContest :one
 SELECT 
     id,
     name,

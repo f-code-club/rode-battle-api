@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/f-code-club/rode-battle-api/internal/account/service"
+	"github.com/f-code-club/rode-battle-api/internal/accounts/service"
 	"github.com/go-fuego/fuego"
 	"github.com/google/uuid"
 )

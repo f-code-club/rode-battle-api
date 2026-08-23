@@ -8,7 +8,7 @@ import (
 
 	contestrepo "github.com/f-code-club/rode-battle-api/internal/contest/repository"
 	problemrepo "github.com/f-code-club/rode-battle-api/internal/problems/repository"
-	sharederrors "github.com/f-code-club/rode-battle-api/internal/shared/errors"
+	apperr "github.com/f-code-club/rode-battle-api/internal/shared/errors"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
@@ -37,14 +37,14 @@ func (s *Service) GetContestDetail(
 	contest, err := contestQueries.GetContest(ctx, contestID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ContestDetail{}, sharederrors.Wrap(
+			return ContestDetail{}, apperr.Wrap(
 				http.StatusNotFound,
 				"contest not found",
 				err,
 			)
 		}
 
-		return ContestDetail{}, sharederrors.Wrap(
+		return ContestDetail{}, apperr.Wrap(
 			http.StatusInternalServerError,
 			"failed to get contest",
 			err,
@@ -53,7 +53,7 @@ func (s *Service) GetContestDetail(
 
 	problems, err := problemQueries.GetProblemsByContest(ctx, contestID)
 	if err != nil {
-		return ContestDetail{}, sharederrors.Wrap(
+		return ContestDetail{}, apperr.Wrap(
 			http.StatusInternalServerError,
 			"failed to get contest problems",
 			err,

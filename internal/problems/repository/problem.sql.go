@@ -63,39 +63,3 @@ func (q *Queries) GetProblemLanguages(ctx context.Context, problemID uuid.UUID) 
 	}
 	return items, nil
 }
-
-const getProblemsByContest = `-- name: GetProblemsByContest :many
-SELECT 
-    id,
-    position,
-    name
-FROM problems
-WHERE contest_id = $1
-ORDER BY position ASC
-`
-
-type GetProblemsByContestRow struct {
-	ID       uuid.UUID
-	Position *int32
-	Name     string
-}
-
-func (q *Queries) GetProblemsByContest(ctx context.Context, contestID uuid.UUID) ([]GetProblemsByContestRow, error) {
-	rows, err := q.db.Query(ctx, getProblemsByContest, contestID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetProblemsByContestRow
-	for rows.Next() {
-		var i GetProblemsByContestRow
-		if err := rows.Scan(&i.ID, &i.Position, &i.Name); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}

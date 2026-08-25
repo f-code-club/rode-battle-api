@@ -12,6 +12,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getContest = `-- name: GetContest :one
+SELECT 
+    id,
+    name,
+    start_time AS start,
+    end_time AS end
+FROM contests
+WHERE id = $1
+`
+
+type GetContestRow struct {
+	ID    uuid.UUID
+	Name  string
+	Start pgtype.Timestamptz
+	End   pgtype.Timestamptz
+}
+
+func (q *Queries) GetContest(ctx context.Context, contestID uuid.UUID) (GetContestRow, error) {
+	row := q.db.QueryRow(ctx, getContest, contestID)
+	var i GetContestRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Start,
+		&i.End,
+	)
+	return i, err
+}
+
 const getContestSubmissions = `-- name: GetContestSubmissions :many
 SELECT
     a.id AS account_id,

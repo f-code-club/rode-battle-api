@@ -33,3 +33,12 @@ SELECT
     end_time AS end
 FROM contests
 ORDER BY start_time;
+
+-- name: GetContest :one
+SELECT 
+    id,
+    name,
+    start_time AS start,
+    end_time AS end
+FROM contests
+WHERE id = @contest_id;

@@ -18,30 +18,28 @@ const (
 	AccountIDKey ContextKey = "id"
 )
 
-type ParseTokenMiddlewareBuilder struct {
-	Service *shared.TokenService
-}
+func NewParseToken(accessTokenSvc *shared.TokenService) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get(headers.Authorization)
+			if !strings.HasPrefix(authHeader, bearerPrefix) {
+				fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
+					Detail: "missing or invalid Authorization header",
+				})
+				return
+			}
 
-func (b ParseTokenMiddlewareBuilder) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get(headers.Authorization)
-		if !strings.HasPrefix(authHeader, bearerPrefix) {
-			fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
-				Detail: "missing or invalid Authorization header",
-			})
-			return
-		}
-
-		tokenStr := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
-		userId, err := b.Service.ParseToken(tokenStr)
-		if err != nil {
-			fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
-				Detail: "invalid token",
-				Err:    err,
-			})
-			return
-		}
-		ctx := context.WithValue(r.Context(), AccountIDKey, userId)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+			tokenStr := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
+			userId, err := accessTokenSvc.ParseToken(tokenStr)
+			if err != nil {
+				fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
+					Detail: "invalid token",
+					Err:    err,
+				})
+				return
+			}
+			ctx := context.WithValue(r.Context(), AccountIDKey, userId)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

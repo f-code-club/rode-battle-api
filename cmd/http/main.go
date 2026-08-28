@@ -20,6 +20,7 @@ import (
 	contest "github.com/f-code-club/rode-battle-api/internal/contests/transport/http"
 	problem "github.com/f-code-club/rode-battle-api/internal/problems/transport/http"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
+	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
 )
 
 func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
@@ -54,6 +55,7 @@ func build() (*fuego.Server, error) {
 
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", cfg.Port)),
+		fuego.WithGlobalMiddlewares(middleware.NewCors(cfg.CorsOrigin)),
 		fuego.WithEngineOptions(
 			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
 				UIHandler: func(specURL string) http.Handler {

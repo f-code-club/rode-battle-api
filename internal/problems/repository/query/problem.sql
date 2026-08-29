@@ -1,5 +1,5 @@
 -- name: GetProblem :one
-SELECT p.position, p.name, p.content_path, p.time_limit, p.memory_limit
+SELECT p.position, p.name, p.content, p.time_limit, p.memory_limit
 FROM problems p
 WHERE id = @id;
 

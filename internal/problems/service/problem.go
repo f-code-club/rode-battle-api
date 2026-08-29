@@ -19,7 +19,7 @@ type GetSubmitHistory = repository.GetSubmitHistoryParams
 type Problem struct {
 	Position    *int32     `json:"position"`
 	Name        string     `json:"name"`
-	ContentPath string     `json:"content_path"`
+	Content     string     `json:"content"`
 	TimeLimit   *int32     `json:"time_limit"`
 	MemoryLimit *int32     `json:"memory_limit"`
 	Languages   []Language `json:"languages"`
@@ -50,7 +50,7 @@ func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error
 	return &Problem{
 		Position:    problem.Position,
 		Name:        problem.Name,
-		ContentPath: problem.ContentPath,
+		Content:     problem.Content,
 		TimeLimit:   problem.TimeLimit,
 		MemoryLimit: problem.MemoryLimit,
 		Languages:   languages,

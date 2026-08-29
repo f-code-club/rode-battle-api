@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS problems(
     position int,
 
     name text NOT NULL,
-    content_path text NOT NULL,
+    content text NOT NULL,
     checker_language language,
     checker_path text,
     time_limit int,

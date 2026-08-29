@@ -12,7 +12,7 @@ import (
 )
 
 const getProblem = `-- name: GetProblem :one
-SELECT p.position, p.name, p.content_path, p.time_limit, p.memory_limit
+SELECT p.position, p.name, p.content, p.time_limit, p.memory_limit
 FROM problems p
 WHERE id = $1
 `
@@ -20,7 +20,7 @@ WHERE id = $1
 type GetProblemRow struct {
 	Position    *int32
 	Name        string
-	ContentPath string
+	Content     string
 	TimeLimit   *int32
 	MemoryLimit *int32
 }
@@ -31,7 +31,7 @@ func (q *Queries) GetProblem(ctx context.Context, id uuid.UUID) (GetProblemRow, 
 	err := row.Scan(
 		&i.Position,
 		&i.Name,
-		&i.ContentPath,
+		&i.Content,
 		&i.TimeLimit,
 		&i.MemoryLimit,
 	)

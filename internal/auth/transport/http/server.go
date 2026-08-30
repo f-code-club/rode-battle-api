@@ -35,6 +35,7 @@ func (s *Server) RegisterRoutes(f *fuego.Server) {
 	g := fuego.Group(f, "/auth")
 	fuego.Post(g, "/login", s.Login)
 	fuego.Get(g, "/refresh", s.Refresh)
+	fuego.Get(g, "/logout", s.Logout)
 	fuego.Get(g, "/me", s.Me,
 		option.Middleware(m),
 		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),

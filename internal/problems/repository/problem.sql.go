@@ -11,6 +11,50 @@ import (
 	"github.com/google/uuid"
 )
 
+const createProblem = `-- name: CreateProblem :one
+INSERT INTO problems (name, content, checker_language, checker_path, time_limit, memory_limit)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id
+`
+
+type CreateProblemParams struct {
+	Name            string
+	Content         string
+	CheckerLanguage *Language
+	CheckerPath     *string
+	TimeLimit       *int32
+	MemoryLimit     *int32
+}
+
+func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, createProblem,
+		arg.Name,
+		arg.Content,
+		arg.CheckerLanguage,
+		arg.CheckerPath,
+		arg.TimeLimit,
+		arg.MemoryLimit,
+	)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createProblemLanguage = `-- name: CreateProblemLanguage :exec
+INSERT INTO problem_languages (problem_id, language)
+		SELECT $1, unnest($2::text[])::language
+`
+
+type CreateProblemLanguageParams struct {
+	ProblemID uuid.UUID
+	Language  []string
+}
+
+func (q *Queries) CreateProblemLanguage(ctx context.Context, arg CreateProblemLanguageParams) error {
+	_, err := q.db.Exec(ctx, createProblemLanguage, arg.ProblemID, arg.Language)
+	return err
+}
+
 const getProblem = `-- name: GetProblem :one
 SELECT p.position, p.name, p.content, p.time_limit, p.memory_limit
 FROM problems p

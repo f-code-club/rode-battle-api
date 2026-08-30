@@ -15,7 +15,7 @@ type CreateProblemRequest struct {
 	CheckerCode     *string   `json:"checker_code"`
 	TimeLimit       *int32    `json:"time_limit"`
 	MemoryLimit     *int32    `json:"memory_limit"`
-	Language        []string  `json:"language" validate:"required"`
+	Languages       []string  `json:"language" validate:"required"`
 }
 
 func (s *Server) GetProblem(c fuego.ContextNoBody) (*service.Problem, error) {
@@ -57,5 +57,5 @@ func (s *Server) CreateProblem(c fuego.ContextWithBody[CreateProblemRequest]) (u
 		CheckerPath:     body.CheckerCode,
 		TimeLimit:       body.TimeLimit,
 		MemoryLimit:     body.MemoryLimit,
-	}, body.Language)
+	}, body.Languages)
 }

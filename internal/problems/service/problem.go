@@ -69,7 +69,6 @@ func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID, acc
 	}
 
 	history := make([]ProblemHistory, 0, len(rows))
-	println(len(history))
 	for _, row := range rows {
 		history = append(history, ProblemHistory{
 			ID:        row.ID,

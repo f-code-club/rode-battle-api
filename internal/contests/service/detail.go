@@ -1,0 +1,77 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"time"
+
+	"github.com/f-code-club/rode-battle-api/internal/contests/repository"
+	apperr "github.com/f-code-club/rode-battle-api/internal/shared/errors"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+)
+
+type Problem struct {
+	ID       uuid.UUID `json:"id"`
+	Position int       `json:"position"`
+	Name     string    `json:"name"`
+}
+
+type ContestDetail struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Start    time.Time `json:"start"`
+	End      time.Time `json:"end"`
+	Problems []Problem `json:"problems"`
+}
+
+func (s *Service) GetContestDetail(
+	ctx context.Context,
+	contestID uuid.UUID,
+) (ContestDetail, error) {
+	queries := repository.New(s.pool)
+
+	contest, err := queries.GetContest(ctx, contestID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ContestDetail{}, apperr.Wrap(
+				http.StatusNotFound,
+				"contest not found",
+				err,
+			)
+		}
+
+		return ContestDetail{}, apperr.Wrap(
+			http.StatusInternalServerError,
+			"failed to get contest",
+			err,
+		)
+	}
+
+	problems, err := queries.GetProblemsByContest(ctx, contestID)
+	if err != nil {
+		return ContestDetail{}, apperr.Wrap(
+			http.StatusInternalServerError,
+			"failed to get contest problems",
+			err,
+		)
+	}
+
+	problemList := make([]Problem, 0, len(problems))
+	for _, p := range problems {
+		problemList = append(problemList, Problem{
+			ID:       p.ID,
+			Position: int(*p.Position),
+			Name:     p.Name,
+		})
+	}
+
+	return ContestDetail{
+		ID:       contest.ID,
+		Name:     contest.Name,
+		Start:    contest.Start.Time,
+		End:      contest.End.Time,
+		Problems: problemList,
+	}, nil
+}

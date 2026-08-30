@@ -27,7 +27,7 @@ func NewServer(
 }
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {
-	m := middleware.ParseTokenMiddlewareBuilder{Service: s.accessTokenSvc}.Middleware
+	m := middleware.NewParseToken(s.accessTokenSvc)
 
 	g := fuego.Group(f, "/problems")
 	fuego.Post(g, "/", s.CreateProblem,

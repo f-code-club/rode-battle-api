@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/f-code-club/rode-battle-api/internal/contest/repository"
+	"github.com/f-code-club/rode-battle-api/internal/contests/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
 	"github.com/google/uuid"
 )

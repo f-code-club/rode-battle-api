@@ -10,14 +10,17 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-fuego/fuego"
 	_ "github.com/joho/godotenv/autoload"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 
 	account "github.com/f-code-club/rode-battle-api/internal/accounts/transport/http"
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
-	contest "github.com/f-code-club/rode-battle-api/internal/contest/transport/http"
+	contest "github.com/f-code-club/rode-battle-api/internal/contests/transport/http"
 	problem "github.com/f-code-club/rode-battle-api/internal/problems/transport/http"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
+	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
 )
 
 func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
@@ -50,7 +53,36 @@ func build() (*fuego.Server, error) {
 	}
 	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
 
-	f := shared.NewServer(&cfg)
+	f := fuego.NewServer(
+		fuego.WithAddr(fmt.Sprintf(":%d", cfg.Port)),
+		fuego.WithGlobalMiddlewares(middleware.NewCors(cfg.CorsOrigin)),
+		fuego.WithEngineOptions(
+			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
+				UIHandler: func(specURL string) http.Handler {
+					return httpSwagger.Handler(
+						httpSwagger.Layout(httpSwagger.StandaloneLayout),
+						httpSwagger.PersistAuthorization(true),
+						httpSwagger.URL(specURL),
+					)
+				},
+				DisableDefaultServer: true,
+				DisableMessages:      true,
+				Info: &openapi3.Info{
+					Title:       "R.ODE API",
+					Description: "R.ODE API",
+				},
+			}),
+		),
+		fuego.WithSecurity(openapi3.SecuritySchemes{
+			"bearerAuth": &openapi3.SecuritySchemeRef{
+				Value: openapi3.NewSecurityScheme().
+					WithType("http").
+					WithScheme("bearer").
+					WithBearerFormat("JWT").
+					WithDescription("Enter your JWT token in the format: Bearer <token>"),
+			},
+		}),
+	)
 	api := fuego.Group(f, "/api/v1")
 
 	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)

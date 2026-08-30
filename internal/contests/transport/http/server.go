@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/f-code-club/rode-battle-api/internal/contest/service"
+	"github.com/f-code-club/rode-battle-api/internal/contests/service"
 	"github.com/go-fuego/fuego"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,4 +24,5 @@ func (s *Server) RegisterRoutes(f *fuego.Server) {
 
 	fuego.Get(g, "/{id}/rank", s.GetRank)
 	fuego.Get(g, "", s.ListContests)
+	fuego.Get(g, "/{id}", s.GetContestDetail)
 }

@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/problems/repository"
 	apperr "github.com/f-code-club/rode-battle-api/internal/shared/errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type Language = repository.Language
@@ -15,6 +17,17 @@ type Language = repository.Language
 type Verdict = repository.Verdict
 
 type GetSubmitHistory = repository.GetSubmitHistoryParams
+
+type CreateProblem = repository.CreateProblemParams
+
+type CreateProblemLanguage = repository.CreateProblemLanguageParams
+
+var algorithmLanguages = map[string]struct{}{
+	"rust":   {},
+	"cpp":    {},
+	"python": {},
+	"java":   {},
+}
 
 type Problem struct {
 	Position    *int32     `json:"position"`
@@ -32,6 +45,15 @@ type ProblemHistory struct {
 	Verdict   *Verdict  `json:"verdict"`
 	Score     *float32  `json:"score"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type CreateProblemInput struct {
+	Name            string
+	Content         string
+	CheckerLanguage *Language
+	CheckerPath     *string
+	TimeLimit       *int32
+	MemoryLimit     *int32
 }
 
 func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error) {
@@ -81,4 +103,64 @@ func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID, acc
 	}
 
 	return history, nil
+}
+
+func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, language []string) (uuid.UUID, error) {
+	var pgErr *pgconn.PgError
+	requiredAlgoInput := false
+	for _, lang := range language {
+		if _, ok := algorithmLanguages[lang]; ok {
+			requiredAlgoInput = true
+		}
+
+		if len(language) > 1 && lang == "html" {
+			return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Language mismatch", nil)
+		}
+	}
+
+	if requiredAlgoInput && (input.CheckerPath == nil || input.CheckerLanguage == nil || input.MemoryLimit == nil || input.TimeLimit == nil) {
+		return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Cannot leave checker_code, checker_language, time_limit, memory_limit empty", nil)
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create problem", err)
+	}
+	defer tx.Rollback(ctx)
+	qtx := repository.New(s.pool).WithTx(tx)
+
+	rows, err := qtx.CreateProblem(ctx, CreateProblem{
+		Name:            input.Name,
+		Content:         input.Content,
+		CheckerLanguage: input.CheckerLanguage,
+		CheckerPath:     input.CheckerPath,
+		TimeLimit:       input.TimeLimit,
+		MemoryLimit:     input.MemoryLimit,
+	})
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Failed to create problem", err)
+	}
+
+	err = qtx.CreateProblemLanguage(ctx, CreateProblemLanguage{
+		ProblemID: rows,
+		Language:  language,
+	})
+	if ok := errors.As(err, &pgErr); ok {
+		switch pgErr.Code {
+		case "23505":
+			return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Duplicate language", err)
+		case "22P02":
+			return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Invalid language", err)
+		}
+	}
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Failed to create problem language", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create problem", err)
+	}
+
+	return rows, nil
+
 }

@@ -30,6 +30,10 @@ func (s *Server) RegisterRoutes(f *fuego.Server) {
 	m := middleware.ParseTokenMiddlewareBuilder{Service: s.accessTokenSvc}.Middleware
 
 	g := fuego.Group(f, "/problems")
+	fuego.Post(g, "/", s.CreateProblem,
+		option.Middleware(m),
+		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
+	)
 	fuego.Get(g, "/{id}", s.GetProblem)
 	fuego.Get(g, "/{id}/history", s.GetSubmitHistory,
 		option.Middleware(m),

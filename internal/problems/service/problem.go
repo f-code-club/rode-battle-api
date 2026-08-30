@@ -126,7 +126,10 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 	if err != nil {
 		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create problem", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
 	qtx := repository.New(s.pool).WithTx(tx)
 
 	rows, err := qtx.CreateProblem(ctx, CreateProblem{

@@ -9,6 +9,7 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/problems/repository"
 	apperr "github.com/f-code-club/rode-battle-api/internal/shared/errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -148,11 +149,12 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 		ProblemID: rows,
 		Language:  language,
 	})
+
 	if ok := errors.As(err, &pgErr); ok {
 		switch pgErr.Code {
-		case "23505":
+		case pgerrcode.UniqueViolation:
 			return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Duplicate language", err)
-		case "22P02":
+		case pgerrcode.InvalidTextRepresentation:
 			return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Invalid language", err)
 		}
 	}

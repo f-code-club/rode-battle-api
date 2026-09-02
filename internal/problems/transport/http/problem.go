@@ -1,11 +1,16 @@
 package http
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
+
 	"github.com/go-fuego/fuego"
 	"github.com/google/uuid"
 
 	"github.com/f-code-club/rode-battle-api/internal/problems/service"
 	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
+	"github.com/go-playground/validator/v10"
 )
 
 type CreateProblemRequest struct {
@@ -15,7 +20,7 @@ type CreateProblemRequest struct {
 	CheckerCode     *string   `json:"checker_code"`
 	TimeLimit       *int32    `json:"time_limit"`
 	MemoryLimit     *int32    `json:"memory_limit"`
-	Languages       []string  `json:"language" validate:"required"`
+	Languages       []string  `json:"languages" validate:"required,unique,min=1,dive,oneof=rust cpp python java html"`
 }
 
 func (s *Server) GetProblem(c fuego.ContextNoBody) (*service.Problem, error) {
@@ -43,6 +48,20 @@ func (s *Server) GetSubmitHistory(c fuego.ContextNoBody) ([]service.ProblemHisto
 
 func (s *Server) CreateProblem(c fuego.ContextWithBody[CreateProblemRequest]) (uuid.UUID, error) {
 	body, err := c.Body()
+	if validateErrs, ok := errors.AsType[validator.ValidationErrors](err); ok {
+		errs := make([]fuego.ErrorItem, 0, len(validateErrs))
+		for _, err := range validateErrs {
+			errs = append(errs, fuego.ErrorItem{
+				Name:   err.Tag(),
+				Reason: fmt.Sprintf("'%s' violates the '%s' constraint", err.Field(), err.Tag()),
+			})
+		}
+
+		return uuid.Nil, fuego.HTTPError{
+			Status: http.StatusBadRequest,
+			Errors: errs,
+		}
+	}
 	if err != nil {
 		return uuid.Nil, fuego.BadRequestError{
 			Title: "Invalid body",

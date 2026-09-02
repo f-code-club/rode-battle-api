@@ -172,7 +172,7 @@ type Problem struct {
 	ContestID       uuid.UUID
 	Position        *int32
 	Name            string
-	ContentPath     string
+	Content         string
 	CheckerLanguage *Language
 	CheckerPath     *string
 	TimeLimit       *int32

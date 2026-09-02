@@ -57,6 +57,7 @@ func build() (*fuego.Server, error) {
 		fuego.WithAddr(fmt.Sprintf(":%d", cfg.Port)),
 		fuego.WithGlobalMiddlewares(middleware.NewCors(cfg.CorsOrigin)),
 		fuego.WithEngineOptions(
+			fuego.WithErrorHandler(middleware.ValidationErrorHandler),
 			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
 				UIHandler: func(specURL string) http.Handler {
 					return httpSwagger.Handler(

@@ -95,7 +95,7 @@ func build() (*fuego.Server, error) {
 	problem := problem.NewServer(&cfg, pool, &accessTokenSvc)
 	problem.RegisterRoutes(api)
 
-	contest := contest.NewServer(pool)
+	contest := contest.NewServer(pool, &accessTokenSvc)
 	contest.RegisterRoutes(f)
 
 	return f, nil

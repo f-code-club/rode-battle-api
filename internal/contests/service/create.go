@@ -15,6 +15,8 @@ import (
 
 var validate = validator.New()
 
+const internalErrorMessage = "something went wrong"
+
 type CreateContestRequest struct {
 	Name     string      `json:"name" validate:"required"`
 	Start    time.Time   `json:"start" validate:"required"`
@@ -46,7 +48,7 @@ func (s *Service) CreateContest(
 	if err != nil {
 		return uuid.Nil, errors.Wrap(
 			http.StatusInternalServerError,
-			"failed to begin transaction",
+			internalErrorMessage,
 			err,
 		)
 	}
@@ -60,7 +62,7 @@ func (s *Service) CreateContest(
 	if err != nil {
 		return uuid.Nil, errors.Wrap(
 			http.StatusInternalServerError,
-			"failed to validate contest problems",
+			internalErrorMessage,
 			err,
 		)
 	}
@@ -83,7 +85,7 @@ func (s *Service) CreateContest(
 	if err != nil {
 		return uuid.Nil, errors.Wrap(
 			http.StatusInternalServerError,
-			"failed to create contest",
+			internalErrorMessage,
 			err,
 		)
 	}
@@ -99,7 +101,7 @@ func (s *Service) CreateContest(
 		if err != nil {
 			return uuid.Nil, errors.Wrap(
 				http.StatusInternalServerError,
-				"failed to assign problems to contest",
+				internalErrorMessage,
 				err,
 			)
 		}
@@ -116,7 +118,7 @@ func (s *Service) CreateContest(
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, errors.Wrap(
 			http.StatusInternalServerError,
-			"failed to commit contest creation",
+			internalErrorMessage,
 			err,
 		)
 	}

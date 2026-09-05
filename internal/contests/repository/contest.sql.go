@@ -12,6 +12,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createContest = `-- name: CreateContest :one
+INSERT INTO contests (
+    name,
+    start_time,
+    end_time
+)
+VALUES (
+    $1,
+    $2,
+    $3
+)
+RETURNING id
+`
+
+type CreateContestParams struct {
+	Name      string
+	StartTime pgtype.Timestamptz
+	EndTime   pgtype.Timestamptz
+}
+
+func (q *Queries) CreateContest(ctx context.Context, arg CreateContestParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, createContest, arg.Name, arg.StartTime, arg.EndTime)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getContest = `-- name: GetContest :one
 SELECT 
     id,

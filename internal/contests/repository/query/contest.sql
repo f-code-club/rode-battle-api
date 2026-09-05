@@ -42,3 +42,16 @@ SELECT
     end_time AS end
 FROM contests
 WHERE id = @contest_id;
+
+-- name: CreateContest :one
+INSERT INTO contests (
+    name,
+    start_time,
+    end_time
+)
+VALUES (
+    @name,
+    @start_time,
+    @end_time
+)
+RETURNING id;

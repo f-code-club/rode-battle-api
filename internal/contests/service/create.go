@@ -8,14 +8,17 @@ import (
 
 	"github.com/f-code-club/rode-battle-api/internal/contests/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+var validate = validator.New()
+
 type CreateContestRequest struct {
-	Name     string      `json:"name"`
-	Start    time.Time   `json:"start"`
-	End      time.Time   `json:"end"`
+	Name     string      `json:"name" validate:"required"`
+	Start    time.Time   `json:"start" validate:"required"`
+	End      time.Time   `json:"end" validate:"required,gtfield=Start"`
 	Problems []uuid.UUID `json:"problems"`
 }
 
@@ -23,13 +26,14 @@ func (s *Service) CreateContest(
 	ctx context.Context,
 	req CreateContestRequest,
 ) (uuid.UUID, error) {
-	name, err := normalizeContestName(req.Name)
-	if err != nil {
-		return uuid.Nil, err
-	}
+	req.Name = strings.TrimSpace(req.Name)
 
-	if err := validateContestTime(req.Start, req.End); err != nil {
-		return uuid.Nil, err
+	if err := validate.Struct(req); err != nil {
+		return uuid.Nil, errors.Wrap(
+			http.StatusBadRequest,
+			"invalid contest request",
+			err,
+		)
 	}
 
 	if err := validateContestProblems(req.Problems); err != nil {
@@ -66,7 +70,7 @@ func (s *Service) CreateContest(
 	}
 
 	contestID, err := txQueries.CreateContest(ctx, repository.CreateContestParams{
-		Name: name,
+		Name: req.Name,
 		StartTime: pgtype.Timestamptz{
 			Time:  req.Start,
 			Valid: true,
@@ -118,40 +122,6 @@ func (s *Service) CreateContest(
 	}
 
 	return contestID, nil
-}
-
-func normalizeContestName(name string) (string, error) {
-	name = strings.TrimSpace(name)
-
-	if name == "" {
-		return "", errors.Wrap(
-			http.StatusBadRequest,
-			"contest name is required",
-			nil,
-		)
-	}
-
-	return name, nil
-}
-
-func validateContestTime(start, end time.Time) error {
-	if start.Before(time.Now()) {
-		return errors.Wrap(
-			http.StatusBadRequest,
-			"contest start time cannot be in the past",
-			nil,
-		)
-	}
-
-	if !start.Before(end) {
-		return errors.Wrap(
-			http.StatusBadRequest,
-			"contest start time must be before end time",
-			nil,
-		)
-	}
-
-	return nil
 }
 
 func validateContestProblems(problemIDs []uuid.UUID) error {

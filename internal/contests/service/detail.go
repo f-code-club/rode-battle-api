@@ -70,8 +70,8 @@ func (s *Service) GetContestDetail(
 	return ContestDetail{
 		ID:       contest.ID,
 		Name:     contest.Name,
-		Start:    contest.Start.Time,
-		End:      contest.End.Time,
+		Start:    contest.Start,
+		End:      contest.End,
 		Problems: problemList,
 	}, nil
 }

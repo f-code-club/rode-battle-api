@@ -7,9 +7,9 @@ package repository
 import (
 	"database/sql/driver"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Language string
@@ -154,17 +154,17 @@ type Account struct {
 	Password  string
 	Role      Role
 	IsBanned  bool
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Contest struct {
 	ID        uuid.UUID
 	Name      string
-	StartTime pgtype.Timestamptz
-	EndTime   pgtype.Timestamptz
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	StartTime time.Time
+	EndTime   time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Problem struct {
@@ -177,8 +177,8 @@ type Problem struct {
 	CheckerPath     *string
 	TimeLimit       *int32
 	MemoryLimit     *int32
-	CreatedAt       pgtype.Timestamptz
-	UpdatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type ProblemLanguage struct {
@@ -194,14 +194,14 @@ type Submission struct {
 	Code      string
 	Verdict   *Verdict
 	Score     *float32
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type TestCase struct {
 	ID        uuid.UUID
 	ProblemID uuid.UUID
 	InputPath string
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

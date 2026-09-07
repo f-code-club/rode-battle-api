@@ -7,9 +7,9 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createContest = `-- name: CreateContest :one
@@ -28,8 +28,8 @@ RETURNING id
 
 type CreateContestParams struct {
 	Name      string
-	StartTime pgtype.Timestamptz
-	EndTime   pgtype.Timestamptz
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 func (q *Queries) CreateContest(ctx context.Context, arg CreateContestParams) (uuid.UUID, error) {
@@ -52,8 +52,8 @@ WHERE id = $1
 type GetContestRow struct {
 	ID    uuid.UUID
 	Name  string
-	Start pgtype.Timestamptz
-	End   pgtype.Timestamptz
+	Start time.Time
+	End   time.Time
 }
 
 func (q *Queries) GetContest(ctx context.Context, contestID uuid.UUID) (GetContestRow, error) {
@@ -97,7 +97,7 @@ type GetContestSubmissionsRow struct {
 	Language        Language
 	Verdict         *Verdict
 	Score           *float32
-	CreatedAt       pgtype.Timestamptz
+	CreatedAt       time.Time
 }
 
 func (q *Queries) GetContestSubmissions(ctx context.Context, contestID uuid.UUID) ([]GetContestSubmissionsRow, error) {
@@ -138,8 +138,8 @@ WHERE id = $1
 `
 
 type GetContestTimeRangeRow struct {
-	StartTime pgtype.Timestamptz
-	EndTime   pgtype.Timestamptz
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 func (q *Queries) GetContestTimeRange(ctx context.Context, contestID uuid.UUID) (GetContestTimeRangeRow, error) {
@@ -162,8 +162,8 @@ ORDER BY start_time
 type GetContestsRow struct {
 	ID    uuid.UUID
 	Name  string
-	Start pgtype.Timestamptz
-	End   pgtype.Timestamptz
+	Start time.Time
+	End   time.Time
 }
 
 func (q *Queries) GetContests(ctx context.Context) ([]GetContestsRow, error) {

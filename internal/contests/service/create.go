@@ -10,7 +10,6 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var validate = validator.New()
@@ -72,15 +71,9 @@ func (s *Service) CreateContest(
 	}
 
 	contestID, err := txQueries.CreateContest(ctx, repository.CreateContestParams{
-		Name: req.Name,
-		StartTime: pgtype.Timestamptz{
-			Time:  req.Start,
-			Valid: true,
-		},
-		EndTime: pgtype.Timestamptz{
-			Time:  req.End,
-			Valid: true,
-		},
+		Name:      req.Name,
+		StartTime: req.Start,
+		EndTime:   req.End,
 	})
 	if err != nil {
 		return uuid.Nil, errors.Wrap(

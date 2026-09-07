@@ -20,7 +20,7 @@ type CreateContestRequest struct {
 	Name     string      `json:"name" validate:"required"`
 	Start    time.Time   `json:"start" validate:"required"`
 	End      time.Time   `json:"end" validate:"required,gtfield=Start"`
-	Problems []uuid.UUID `json:"problems"`
+	Problems []uuid.UUID `json:"problems" validate:"unique,dive,required"`
 }
 
 func (s *Service) CreateContest(
@@ -35,10 +35,6 @@ func (s *Service) CreateContest(
 			"invalid contest request",
 			err,
 		)
-	}
-
-	if err := validateContestProblems(req.Problems); err != nil {
-		return uuid.Nil, err
 	}
 
 	queries := repository.New(s.pool)
@@ -117,32 +113,6 @@ func (s *Service) CreateContest(
 	}
 
 	return contestID, nil
-}
-
-func validateContestProblems(problemIDs []uuid.UUID) error {
-	seen := make(map[uuid.UUID]struct{}, len(problemIDs))
-
-	for _, problemID := range problemIDs {
-		if problemID == uuid.Nil {
-			return errors.Wrap(
-				http.StatusBadRequest,
-				"problem id must not be empty",
-				nil,
-			)
-		}
-
-		if _, exists := seen[problemID]; exists {
-			return errors.Wrap(
-				http.StatusBadRequest,
-				"duplicate problem id",
-				nil,
-			)
-		}
-
-		seen[problemID] = struct{}{}
-	}
-
-	return nil
 }
 
 func validateProblemAssignment(

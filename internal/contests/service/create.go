@@ -8,34 +8,23 @@ import (
 
 	"github.com/f-code-club/rode-battle-api/internal/contests/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
-var validate = validator.New()
-
 const internalErrorMessage = "something went wrong"
 
-type CreateContestRequest struct {
-	Name     string      `json:"name" validate:"required"`
-	Start    time.Time   `json:"start" validate:"required"`
-	End      time.Time   `json:"end" validate:"required,gtfield=Start"`
-	Problems []uuid.UUID `json:"problems" validate:"unique,dive,required"`
+type CreateContestInput struct {
+	Name     string
+	Start    time.Time
+	End      time.Time
+	Problems []uuid.UUID
 }
 
 func (s *Service) CreateContest(
 	ctx context.Context,
-	req CreateContestRequest,
+	req CreateContestInput,
 ) (uuid.UUID, error) {
 	req.Name = strings.TrimSpace(req.Name)
-
-	if err := validate.Struct(req); err != nil {
-		return uuid.Nil, errors.Wrap(
-			http.StatusBadRequest,
-			"invalid contest request",
-			err,
-		)
-	}
 
 	queries := repository.New(s.pool)
 

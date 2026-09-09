@@ -13,18 +13,13 @@ import (
 
 const internalErrorMessage = "something went wrong"
 
-type CreateContestInput struct {
-	Name     string
-	Start    time.Time
-	End      time.Time
-	Problems []uuid.UUID
-}
-
 func (s *Service) CreateContest(
 	ctx context.Context,
-	req CreateContestInput,
+	name string,
+	start, end time.Time,
+	problemIds []uuid.UUID,
 ) (uuid.UUID, error) {
-	req.Name = strings.TrimSpace(req.Name)
+	name = strings.TrimSpace(name)
 
 	queries := repository.New(s.pool)
 
@@ -42,7 +37,7 @@ func (s *Service) CreateContest(
 
 	txQueries := queries.WithTx(tx)
 
-	problems, err := txQueries.GetProblemsForContestAssignment(ctx, req.Problems)
+	problems, err := txQueries.GetProblemsForContestAssignment(ctx, problemIds)
 	if err != nil {
 		return uuid.Nil, errors.Wrap(
 			http.StatusInternalServerError,
@@ -51,14 +46,14 @@ func (s *Service) CreateContest(
 		)
 	}
 
-	if err := validateProblemAssignment(problems, req.Problems); err != nil {
+	if err := validateProblemAssignment(problems, problemIds); err != nil {
 		return uuid.Nil, err
 	}
 
 	contestID, err := txQueries.CreateContest(ctx, repository.CreateContestParams{
-		Name:      req.Name,
-		StartTime: req.Start,
-		EndTime:   req.End,
+		Name:      name,
+		StartTime: start,
+		EndTime:   end,
 	})
 	if err != nil {
 		return uuid.Nil, errors.Wrap(
@@ -68,12 +63,12 @@ func (s *Service) CreateContest(
 		)
 	}
 
-	if len(req.Problems) > 0 {
+	if len(problemIds) > 0 {
 		assigned, err := txQueries.AssignProblemsToContest(
 			ctx,
 			repository.AssignProblemsToContestParams{
 				ContestID:  contestID,
-				ProblemIds: req.Problems,
+				ProblemIds: problemIds,
 			},
 		)
 		if err != nil {
@@ -84,7 +79,7 @@ func (s *Service) CreateContest(
 			)
 		}
 
-		if assigned != int64(len(req.Problems)) {
+		if assigned != int64(len(problemIds)) {
 			return uuid.Nil, errors.Wrap(
 				http.StatusConflict,
 				"one or more problems are already assigned to another contest",

@@ -3,7 +3,6 @@ package http
 import (
 	"time"
 
-	"github.com/f-code-club/rode-battle-api/internal/contests/service"
 	"github.com/go-fuego/fuego"
 	"github.com/google/uuid"
 )
@@ -24,10 +23,5 @@ func (s *Server) CreateContest(c fuego.ContextWithBody[CreateContestRequest]) (u
 		}
 	}
 
-	return s.service.CreateContest(c.Context(), service.CreateContestInput{
-		Name:     body.Name,
-		Start:    body.Start,
-		End:      body.End,
-		Problems: body.Problems,
-	})
+	return s.service.CreateContest(c.Context(), body.Name, body.Start, body.End, body.Problems)
 }

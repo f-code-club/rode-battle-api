@@ -16,6 +16,7 @@ type CreateProblemRequest struct {
 	TimeLimit       *int32    `json:"time_limit"`
 	MemoryLimit     *int32    `json:"memory_limit"`
 	Languages       []string  `json:"languages" validate:"required,unique,min=1,dive,oneof=rust cpp python java html"`
+	ColorCode       *string   `json:"color_code"`
 }
 
 func (s *Server) GetProblem(c fuego.ContextNoBody) (*service.Problem, error) {
@@ -54,5 +55,6 @@ func (s *Server) CreateProblem(c fuego.ContextWithBody[CreateProblemRequest]) (u
 		CheckerPath:     body.CheckerCode,
 		TimeLimit:       body.TimeLimit,
 		MemoryLimit:     body.MemoryLimit,
+		ColorCode:       body.ColorCode,
 	}, body.Languages)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/problems/repository"
@@ -30,12 +31,15 @@ var algorithmLanguages = map[string]struct{}{
 	"java":   {},
 }
 
+var colorCodeRegex = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
+
 type Problem struct {
 	Position    *int32     `json:"position"`
 	Name        string     `json:"name"`
 	Content     string     `json:"content"`
 	TimeLimit   *int32     `json:"time_limit"`
 	MemoryLimit *int32     `json:"memory_limit"`
+	ColorCode   *string    `json:"color_code"`
 	Languages   []Language `json:"languages"`
 }
 
@@ -55,6 +59,7 @@ type CreateProblemInput struct {
 	CheckerPath     *string
 	TimeLimit       *int32
 	MemoryLimit     *int32
+	ColorCode       *string
 }
 
 func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error) {
@@ -76,6 +81,7 @@ func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error
 		Content:     problem.Content,
 		TimeLimit:   problem.TimeLimit,
 		MemoryLimit: problem.MemoryLimit,
+		ColorCode:   problem.ColorCode,
 		Languages:   languages,
 	}, nil
 }
@@ -108,6 +114,15 @@ func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID, acc
 
 func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, language []string) (uuid.UUID, error) {
 	var pgErr *pgconn.PgError
+
+	if input.ColorCode != nil && !colorCodeRegex.MatchString(*input.ColorCode) {
+		return uuid.Nil, apperr.Wrap(
+			http.StatusBadRequest,
+			"Invalid color code",
+			nil,
+		)
+	}
+
 	requiredAlgoInput := false
 	for _, lang := range language {
 		if _, ok := algorithmLanguages[lang]; ok {
@@ -140,6 +155,7 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 		CheckerPath:     input.CheckerPath,
 		TimeLimit:       input.TimeLimit,
 		MemoryLimit:     input.MemoryLimit,
+		ColorCode:       input.ColorCode,
 	})
 	if err != nil {
 		return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Failed to create problem", err)

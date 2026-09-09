@@ -12,8 +12,8 @@ import (
 )
 
 const createProblem = `-- name: CreateProblem :one
-INSERT INTO problems (name, content, checker_language, checker_path, time_limit, memory_limit)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO problems (name, content, checker_language, checker_path, time_limit, memory_limit, color_code)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id
 `
 
@@ -24,6 +24,7 @@ type CreateProblemParams struct {
 	CheckerPath     *string
 	TimeLimit       *int32
 	MemoryLimit     *int32
+	ColorCode       *string
 }
 
 func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (uuid.UUID, error) {
@@ -34,6 +35,7 @@ func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (u
 		arg.CheckerPath,
 		arg.TimeLimit,
 		arg.MemoryLimit,
+		arg.ColorCode,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)
@@ -42,7 +44,7 @@ func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (u
 
 const createProblemLanguage = `-- name: CreateProblemLanguage :exec
 INSERT INTO problem_languages (problem_id, language)
-		SELECT $1, unnest($2::text[])::language
+SELECT $1, unnest($2::text[])::language
 `
 
 type CreateProblemLanguageParams struct {
@@ -56,7 +58,7 @@ func (q *Queries) CreateProblemLanguage(ctx context.Context, arg CreateProblemLa
 }
 
 const getProblem = `-- name: GetProblem :one
-SELECT p.position, p.name, p.content, p.time_limit, p.memory_limit
+SELECT p.position, p.name, p.content, p.color_code, p.time_limit, p.memory_limit
 FROM problems p
 WHERE id = $1
 `
@@ -65,6 +67,7 @@ type GetProblemRow struct {
 	Position    *int32
 	Name        string
 	Content     string
+	ColorCode   *string
 	TimeLimit   *int32
 	MemoryLimit *int32
 }
@@ -76,6 +79,7 @@ func (q *Queries) GetProblem(ctx context.Context, id uuid.UUID) (GetProblemRow, 
 		&i.Position,
 		&i.Name,
 		&i.Content,
+		&i.ColorCode,
 		&i.TimeLimit,
 		&i.MemoryLimit,
 	)

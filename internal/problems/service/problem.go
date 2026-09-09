@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/problems/repository"
@@ -30,8 +29,6 @@ var algorithmLanguages = map[string]struct{}{
 	"python": {},
 	"java":   {},
 }
-
-var colorCodeRegex = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
 
 type Problem struct {
 	Position    *int32     `json:"position"`
@@ -114,14 +111,6 @@ func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID, acc
 
 func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, language []string) (uuid.UUID, error) {
 	var pgErr *pgconn.PgError
-
-	if input.ColorCode != nil && !colorCodeRegex.MatchString(*input.ColorCode) {
-		return uuid.Nil, apperr.Wrap(
-			http.StatusBadRequest,
-			"Invalid color code",
-			nil,
-		)
-	}
 
 	requiredAlgoInput := false
 	for _, lang := range language {

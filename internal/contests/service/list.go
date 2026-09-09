@@ -36,8 +36,8 @@ func (s *Service) ListContests(
 		result = append(result, Contest{
 			ID:    c.ID,
 			Name:  c.Name,
-			Start: c.Start.Time,
-			End:   c.End.Time,
+			Start: c.Start,
+			End:   c.End,
 		})
 	}
 

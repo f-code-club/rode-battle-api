@@ -58,7 +58,7 @@ func (s *Service) GetRank(
 		)
 	}
 
-	result := buildRankings(rows, contestTime.StartTime.Time)
+	result := buildRankings(rows, contestTime.StartTime)
 
 	sort.Slice(result, func(i, j int) bool {
 		if result[i].Score != result[j].Score {
@@ -150,7 +150,7 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 		ProblemPosition: int(*last.ProblemPosition),
 		SubmissionCount: submissionCount,
 		Score:           int(math.Round(float64(best))),
-		LastSubmit:      last.CreatedAt.Time,
+		LastSubmit:      last.CreatedAt,
 	}
 
 	penalty := float64(submissionCount * PenaltyPerSubmission)
@@ -173,7 +173,7 @@ func calculateAlgorithmProblemResult(
 		score = ScorePerProblem
 	}
 
-	lastSubmit := last.CreatedAt.Time
+	lastSubmit := last.CreatedAt
 
 	detail := Detail{
 		ProblemID:       last.ProblemID,

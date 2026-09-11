@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"time"
+	"unicode"
 
 	"github.com/f-code-club/rode-battle-api/internal/contests/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
@@ -32,6 +33,7 @@ type submissionRow = repository.GetContestSubmissionsRow
 const (
 	PenaltyPerSubmission = 10
 	ScorePerProblem      = 1
+	PenaltyPerCodeChar   = 1
 )
 
 func (s *Service) GetRank(
@@ -139,9 +141,11 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 	submissionCount := len(submissions)
 
 	var best float32
+	var bestCode string
 	for _, sub := range submissions {
 		if sub.Score != nil && *sub.Score > best {
 			best = *sub.Score
+			bestCode = sub.Code
 		}
 	}
 
@@ -153,7 +157,9 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 		LastSubmit:      last.CreatedAt,
 	}
 
-	penalty := float64(submissionCount * PenaltyPerSubmission)
+	codeLength := effectiveCSSLength(bestCode)
+
+	penalty := float64(submissionCount*PenaltyPerSubmission) + float64(codeLength*PenaltyPerCodeChar)
 
 	return detail, penalty
 }
@@ -202,4 +208,15 @@ func truncateAtFirstAccepted(
 	}
 
 	return submissions, false
+}
+
+func effectiveCSSLength(code string) int {
+	count := 0
+	for _, r := range code {
+		if unicode.IsSpace(r) {
+			continue
+		}
+		count++
+	}
+	return count
 }

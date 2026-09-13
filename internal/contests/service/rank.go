@@ -130,13 +130,13 @@ func calculateProblemResult(
 	contestStart time.Time,
 ) (Detail, int) {
 	if submissions[0].Language == repository.LanguageHtml {
-		return calculateCssProblemResult(submissions)
+		return calculateCssProblemResult(submissions, contestStart)
 	}
 
 	return calculateAlgorithmProblemResult(submissions, contestStart)
 }
 
-func calculateCssProblemResult(submissions []submissionRow) (Detail, int) {
+func calculateCssProblemResult(submissions []submissionRow, contestStart time.Time) (Detail, int) {
 	last := submissions[len(submissions)-1]
 	submissionCount := len(submissions)
 
@@ -159,7 +159,8 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, int) {
 
 	codeLength := effectiveCSSLength(bestCode)
 
-	penalty := submissionCount*PenaltyPerSubmission + codeLength*PenaltyPerCodeChar
+	minutes := last.CreatedAt.Sub(contestStart).Minutes()
+	penalty := int(minutes) + submissionCount*PenaltyPerSubmission + codeLength*PenaltyPerCodeChar
 
 	return detail, penalty
 }

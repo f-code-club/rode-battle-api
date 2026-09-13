@@ -23,7 +23,7 @@ type Detail struct {
 type Ranking struct {
 	Name    string   `json:"name"`
 	Score   float64  `json:"score"`
-	Penalty float64  `json:"penalty"`
+	Penalty int      `json:"penalty"`
 	Details []Detail `json:"details"`
 }
 
@@ -99,10 +99,11 @@ func buildRankings(rows []submissionRow, contestStart time.Time) []Ranking {
 	return result
 }
 
-func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail, float64, float64) {
+func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail, float64, int) {
 	details := make([]Detail, 0)
 
-	var totalScore, totalPenalty float64
+	var totalScore float64
+	var totalPenalty int
 
 	for i := 0; i < len(rows); {
 		problemID := rows[i].ProblemID
@@ -127,7 +128,7 @@ func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail
 func calculateProblemResult(
 	submissions []submissionRow,
 	contestStart time.Time,
-) (Detail, float64) {
+) (Detail, int) {
 	if submissions[0].Language == repository.LanguageHtml {
 		return calculateCssProblemResult(submissions)
 	}
@@ -135,7 +136,7 @@ func calculateProblemResult(
 	return calculateAlgorithmProblemResult(submissions, contestStart)
 }
 
-func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
+func calculateCssProblemResult(submissions []submissionRow) (Detail, int) {
 	last := submissions[len(submissions)-1]
 	submissionCount := len(submissions)
 
@@ -158,7 +159,7 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 
 	codeLength := effectiveCSSLength(bestCode)
 
-	penalty := float64(submissionCount*PenaltyPerSubmission) + float64(codeLength*PenaltyPerCodeChar)
+	penalty := submissionCount*PenaltyPerSubmission + codeLength*PenaltyPerCodeChar
 
 	return detail, penalty
 }
@@ -166,7 +167,7 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 func calculateAlgorithmProblemResult(
 	submissions []submissionRow,
 	contestStart time.Time,
-) (Detail, float64) {
+) (Detail, int) {
 	truncated, hasAccepted := truncateAtFirstAccepted(submissions)
 
 	last := truncated[len(truncated)-1]
@@ -188,10 +189,10 @@ func calculateAlgorithmProblemResult(
 		LastSubmit:      lastSubmit,
 	}
 
-	penalty := 0.0
+	penalty := 0
 	if hasAccepted {
 		minutes := lastSubmit.Sub(contestStart).Minutes()
-		penalty = minutes + float64(submissionCount*PenaltyPerSubmission)
+		penalty = int(minutes) + submissionCount*PenaltyPerSubmission
 	}
 
 	return detail, penalty

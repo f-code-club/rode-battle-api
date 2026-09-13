@@ -216,4 +216,3 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 	return rows, nil
 }
 
-}

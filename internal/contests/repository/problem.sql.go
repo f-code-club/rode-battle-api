@@ -11,24 +11,21 @@ import (
 	"github.com/google/uuid"
 )
 
-const assignProblemsToContest = `-- name: AssignProblemsToContest :execrows
+const assignProblemToContest = `-- name: AssignProblemToContest :exec
 UPDATE problems
-SET contest_id = $1
-WHERE id = ANY($2::uuid[])
-  AND contest_id IS NULL
+SET contest_id = $1, position = $2
+WHERE id = $3
 `
 
-type AssignProblemsToContestParams struct {
-	ContestID  uuid.UUID
-	ProblemIds []uuid.UUID
+type AssignProblemToContestParams struct {
+	ContestID uuid.UUID
+	Position  *int32
+	ID        uuid.UUID
 }
 
-func (q *Queries) AssignProblemsToContest(ctx context.Context, arg AssignProblemsToContestParams) (int64, error) {
-	result, err := q.db.Exec(ctx, assignProblemsToContest, arg.ContestID, arg.ProblemIds)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) AssignProblemToContest(ctx context.Context, arg AssignProblemToContestParams) error {
+	_, err := q.db.Exec(ctx, assignProblemToContest, arg.ContestID, arg.Position, arg.ID)
+	return err
 }
 
 const getProblemsByContest = `-- name: GetProblemsByContest :many
@@ -57,39 +54,6 @@ func (q *Queries) GetProblemsByContest(ctx context.Context, contestID uuid.UUID)
 	for rows.Next() {
 		var i GetProblemsByContestRow
 		if err := rows.Scan(&i.ID, &i.Position, &i.Name); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getProblemsForContestAssignment = `-- name: GetProblemsForContestAssignment :many
-SELECT
-    id,
-    contest_id
-FROM problems
-WHERE id = ANY($1::uuid[])
-`
-
-type GetProblemsForContestAssignmentRow struct {
-	ID        uuid.UUID
-	ContestID uuid.UUID
-}
-
-func (q *Queries) GetProblemsForContestAssignment(ctx context.Context, problemIds []uuid.UUID) ([]GetProblemsForContestAssignmentRow, error) {
-	rows, err := q.db.Query(ctx, getProblemsForContestAssignment, problemIds)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetProblemsForContestAssignmentRow
-	for rows.Next() {
-		var i GetProblemsForContestAssignmentRow
-		if err := rows.Scan(&i.ID, &i.ContestID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

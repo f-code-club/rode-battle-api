@@ -73,21 +73,24 @@ func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error
 	if err != nil {
 		return nil, apperr.Wrap(http.StatusBadRequest, "Failed to get problem", err)
 	}
+	content := problem.Content
 
 	languages, err := queries.GetProblemLanguages(ctx, id)
 	if err != nil {
 		return nil, apperr.Wrap(http.StatusBadRequest, "Failed to get language", err)
 	}
 
-	contentUrl, err := s.s3.GetPresignedURl(ctx, problem.Content, 15*time.Minute)
-	if err != nil {
-		return nil, apperr.Wrap(http.StatusInternalServerError, "Failed to get get URL", err)
+	if languages[0] == "html" {
+		content, err = s.s3.GetPresignedURl(ctx, problem.Content, 15*time.Minute)
+		if err != nil {
+			return nil, apperr.Wrap(http.StatusInternalServerError, "Failed to get get URL", err)
+		}
 	}
 
 	return &Problem{
 		Position:    problem.Position,
 		Name:        problem.Name,
-		Content:     contentUrl,
+		Content:     content,
 		TimeLimit:   problem.TimeLimit,
 		MemoryLimit: problem.MemoryLimit,
 		ColorCode:   problem.ColorCode,

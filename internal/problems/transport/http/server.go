@@ -14,16 +14,18 @@ import (
 type Server struct {
 	service        service.Service
 	accessTokenSvc *shared.TokenService
+	s3             *shared.S3Service
 }
 
 func NewServer(
 	cfg *shared.Config,
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
+	s3 *shared.S3Service,
 ) Server {
-	service := service.New(pool)
+	service := service.New(pool, s3)
 
-	return Server{service, accessTokenSvc}
+	return Server{service, accessTokenSvc, s3}
 }
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {

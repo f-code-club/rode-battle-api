@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/caarlos0/env/v11"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-fuego/fuego"
@@ -47,11 +49,27 @@ func build() (*fuego.Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	s3Service, err := shared.NewS3Service(context.Background(), shared.S3Config{
+		Bucket:   cfg.S3Bucket,
+		Region:   cfg.S3Region,
+		Endpoint: cfg.AwsEndpointURL,
+	})
+	if err != nil {
+		return nil, err
+	}
 	pool, err := shared.NewDatabasePool(cfg.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}
 	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
+	out, err := s3Service.Client.ListBuckets(context.Background(), &s3.ListBucketsInput{})
+	if err != nil {
+		log.Fatalf("connection failed: %v", err)
+	}
+	fmt.Println("Connected successfully. Buckets visible to these credentials:")
+	for _, b := range out.Buckets {
+		fmt.Printf("  - %s\n", aws.ToString(b.Name))
+	}
 
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", cfg.Port)),
@@ -92,7 +110,7 @@ func build() (*fuego.Server, error) {
 	account := account.NewServer(&cfg, pool, &accessTokenSvc)
 	account.RegisterRoutes(api)
 
-	problem := problem.NewServer(&cfg, pool, &accessTokenSvc)
+	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service)
 	problem.RegisterRoutes(api)
 
 	contest := contest.NewServer(pool, &accessTokenSvc)

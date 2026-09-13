@@ -1,13 +1,17 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/problems/repository"
 	apperr "github.com/f-code-club/rode-battle-api/internal/shared/errors"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -66,16 +70,24 @@ func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error
 	if err != nil {
 		return nil, apperr.Wrap(http.StatusBadRequest, "Failed to get problem", err)
 	}
+	content := problem.Content
 
 	languages, err := queries.GetProblemLanguages(ctx, id)
 	if err != nil {
 		return nil, apperr.Wrap(http.StatusBadRequest, "Failed to get language", err)
 	}
 
+	if languages[0] == "html" {
+		content, err = s.s3.GetPresignedURl(ctx, problem.Content, 15*time.Minute)
+		if err != nil {
+			return nil, apperr.Wrap(http.StatusInternalServerError, "Failed to get get URL", err)
+		}
+	}
+
 	return &Problem{
 		Position:    problem.Position,
 		Name:        problem.Name,
-		Content:     problem.Content,
+		Content:     content,
 		TimeLimit:   problem.TimeLimit,
 		MemoryLimit: problem.MemoryLimit,
 		ColorCode:   problem.ColorCode,
@@ -111,6 +123,7 @@ func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID, acc
 
 func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, language []string) (uuid.UUID, error) {
 	var pgErr *pgconn.PgError
+	content := input.Content
 
 	requiredAlgoInput := false
 	for _, lang := range language {
@@ -127,6 +140,27 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 		return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Cannot leave checker_code, checker_language, time_limit, memory_limit empty", nil)
 	}
 
+	if !requiredAlgoInput {
+		raw, err := uuid.NewRandom()
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "error generating password", err)
+		}
+		decoded, err := base64.StdEncoding.DecodeString(input.Content)
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Faield to decode base64", err)
+		}
+
+		content = fmt.Sprintf("problems/%s", raw.String())
+
+		mime := mimetype.Detect(decoded)
+		file := bytes.NewReader(decoded)
+
+		err = s.s3.UploadFile(context.TODO(), content, file, mime.String())
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to upload problems to storage", err)
+		}
+	}
+
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create problem", err)
@@ -139,7 +173,7 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 
 	rows, err := qtx.CreateProblem(ctx, CreateProblem{
 		Name:            input.Name,
-		Content:         input.Content,
+		Content:         content,
 		CheckerLanguage: input.CheckerLanguage,
 		CheckerPath:     input.CheckerPath,
 		TimeLimit:       input.TimeLimit,
@@ -172,5 +206,4 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 	}
 
 	return rows, nil
-
 }

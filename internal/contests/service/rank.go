@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"math"
 	"net/http"
 	"sort"
 	"time"
@@ -17,7 +16,7 @@ type Detail struct {
 	ProblemID       uuid.UUID `json:"problem_id"`
 	ProblemPosition int       `json:"problem_position"`
 	SubmissionCount int       `json:"submission_count"`
-	Score           int       `json:"score"`
+	Score           float64   `json:"score"`
 	LastSubmit      time.Time `json:"last_submit"`
 }
 
@@ -116,7 +115,7 @@ func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail
 		detail, penalty := calculateProblemResult(rows[i:problemEnd], contestStart)
 
 		details = append(details, detail)
-		totalScore += float64(detail.Score)
+		totalScore += detail.Score
 		totalPenalty += penalty
 
 		i = problemEnd
@@ -140,11 +139,11 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 	last := submissions[len(submissions)-1]
 	submissionCount := len(submissions)
 
-	var best float32
+	var best float64
 	var bestCode string
 	for _, sub := range submissions {
-		if sub.Score != nil && *sub.Score > best {
-			best = *sub.Score
+		if sub.Score != nil && float64(*sub.Score) > best {
+			best = float64(*sub.Score)
 			bestCode = sub.Code
 		}
 	}
@@ -153,7 +152,7 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 		ProblemID:       last.ProblemID,
 		ProblemPosition: int(*last.ProblemPosition),
 		SubmissionCount: submissionCount,
-		Score:           int(math.Round(float64(best))),
+		Score:           best,
 		LastSubmit:      last.CreatedAt,
 	}
 
@@ -174,7 +173,7 @@ func calculateAlgorithmProblemResult(
 
 	submissionCount := len(truncated)
 
-	score := 0
+	var score float64
 	if hasAccepted {
 		score = ScorePerProblem
 	}

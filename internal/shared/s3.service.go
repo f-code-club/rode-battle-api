@@ -28,7 +28,7 @@ func NewS3Service(ctx context.Context, cfg S3Config) (*S3Service, error) {
 		config.WithRegion(cfg.Region),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load aws config: %v", err)
+		return nil, fmt.Errorf("failed to load aws config: %v", err)
 	}
 	client := s3.NewFromConfig(s3DefaultConfig, func(opt *s3.Options) {
 		opt.EndpointResolverV2 = &EndpointResolver{Endpoint: cfg.Endpoint}

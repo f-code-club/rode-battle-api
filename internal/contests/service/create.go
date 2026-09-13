@@ -17,8 +17,12 @@ func (s *Service) CreateContest(
 	ctx context.Context,
 	name string,
 	start, end time.Time,
-	problemIds []uuid.UUID,
+	problems []uuid.UUID,
 ) (uuid.UUID, error) {
+	if len(problems) == 0 {
+		return uuid.Nil, errors.New(http.StatusBadRequest, "no problem assigned to contest")
+	}
+
 	name = strings.TrimSpace(name)
 
 	queries := repository.New(s.pool)
@@ -37,19 +41,6 @@ func (s *Service) CreateContest(
 
 	txQueries := queries.WithTx(tx)
 
-	problems, err := txQueries.GetProblemsForContestAssignment(ctx, problemIds)
-	if err != nil {
-		return uuid.Nil, errors.Wrap(
-			http.StatusInternalServerError,
-			internalErrorMessage,
-			err,
-		)
-	}
-
-	if err := validateProblemAssignment(problems, problemIds); err != nil {
-		return uuid.Nil, err
-	}
-
 	contestID, err := txQueries.CreateContest(ctx, repository.CreateContestParams{
 		Name:      name,
 		StartTime: start,
@@ -62,13 +53,15 @@ func (s *Service) CreateContest(
 			err,
 		)
 	}
+	for i, id := range problems {
+		position := int32(i)
 
-	if len(problemIds) > 0 {
-		assigned, err := txQueries.AssignProblemsToContest(
+		err := txQueries.AssignProblemToContest(
 			ctx,
-			repository.AssignProblemsToContestParams{
-				ContestID:  contestID,
-				ProblemIds: problemIds,
+			repository.AssignProblemToContestParams{
+				ContestID: contestID,
+				ID:        id,
+				Position:  &position,
 			},
 		)
 		if err != nil {
@@ -76,14 +69,6 @@ func (s *Service) CreateContest(
 				http.StatusInternalServerError,
 				internalErrorMessage,
 				err,
-			)
-		}
-
-		if assigned != int64(len(problemIds)) {
-			return uuid.Nil, errors.Wrap(
-				http.StatusConflict,
-				"one or more problems are already assigned to another contest",
-				nil,
 			)
 		}
 	}
@@ -97,29 +82,4 @@ func (s *Service) CreateContest(
 	}
 
 	return contestID, nil
-}
-
-func validateProblemAssignment(
-	problems []repository.GetProblemsForContestAssignmentRow,
-	requestedIDs []uuid.UUID,
-) error {
-	if len(problems) != len(requestedIDs) {
-		return errors.Wrap(
-			http.StatusBadRequest,
-			"one or more problems do not exist",
-			nil,
-		)
-	}
-
-	for _, problem := range problems {
-		if problem.ContestID != uuid.Nil {
-			return errors.Wrap(
-				http.StatusConflict,
-				"one or more problems are already assigned to another contest",
-				nil,
-			)
-		}
-	}
-
-	return nil
 }

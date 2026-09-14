@@ -1,0 +1,104 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: rode-battle-postgres
+    restart: unless-stopped
+    environment:
+      PGDATA: /var/lib/postgresql/18/docker
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - rode-battle-postgres-data:/var/lib/postgresql
+    networks:
+      - rode-battle
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rode-battle-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "15672:15672" # RabbitMQ Management UI
+      - "5672:5672" # RabbitMQ AMQP
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rode-battle-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - rode-battle
+    healthcheck:
+      test:
+        - CMD
+        - rabbitmq-diagnostics
+        - "-q"
+        - ping
+      retries: 3
+      timeout: 5s
+      interval: 30s
+
+  rode-battle-judge:
+    image: ${REGISTRY}/rode-battle/judge:latest
+    container_name: rode-battle-judge
+    restart: unless-stopped
+    ports:
+      - 8901:8901
+    environment:
+      AMQP_URL: ${AMQP_URL}
+      DATABASE_URL: ${DATABASE_URL}
+
+      S3_BUCKET: ${S3_BUCKET}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+
+      TASK_QUEUE: ${TASK_QUEUE}
+
+  rode-battle-api:
+    image: ${REGISTRY}/rode-battle/api:latest
+    container_name: rode-battle-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - rode-battle
+
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+
+      CORS_ORIGIN: ${CORS_ORIGIN}
+
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRED_IN: ${JWT_REFRESH_EXPIRED_IN}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_ACCESS_EXPIRED_IN: ${JWT_ACCESS_EXPIRED_IN}
+
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+
+      PORT: 8080
+
+  rode-battle-web:
+    image: ${REGISTRY}/web:${IMAGE_TAG:-latest}
+    container_name: rode-battle-web
+    hostname: rode-battle-web
+    restart: on-failure:20
+    ports:
+      - "4444:80"
+    environment:
+      NODE_ENV: production
+      CLIENT_API_BASE_URL: ${API_BASE_URL}
+    networks:
+      - rode-battle
+
+volumes:
+  rode-battle-postgres-data:
+  rode-battle-rabbitmq-data:
+networks:
+  rode-battle:
+    name: rode-battle-network

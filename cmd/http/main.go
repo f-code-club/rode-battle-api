@@ -18,6 +18,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
 	account "github.com/f-code-club/rode-battle-api/internal/accounts/transport/http"
+	authSvc "github.com/f-code-club/rode-battle-api/internal/auth/service"
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/transport/http"
 	contest "github.com/f-code-club/rode-battle-api/internal/contests/transport/http"
 	problem "github.com/f-code-club/rode-battle-api/internal/problems/transport/http"
@@ -62,6 +63,8 @@ func build() (*fuego.Server, error) {
 		return nil, err
 	}
 	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
+	refreshTokenSvc := shared.NewTokenService(cfg.JWTRefreshSecret, cfg.JWTRefreshExpiredIn)
+	authSvc := authSvc.New(pool, &refreshTokenSvc, &accessTokenSvc)
 	out, err := s3Service.Client.ListBuckets(context.Background(), &s3.ListBucketsInput{})
 	if err != nil {
 		log.Fatalf("connection failed: %v", err)
@@ -113,7 +116,7 @@ func build() (*fuego.Server, error) {
 	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service)
 	problem.RegisterRoutes(api)
 
-	contest := contest.NewServer(pool, &accessTokenSvc)
+	contest := contest.NewServer(pool, &accessTokenSvc, authSvc)
 	contest.RegisterRoutes(f)
 
 	return f, nil

@@ -110,7 +110,7 @@ func build() (*fuego.Server, error) {
 	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)
 	auth.RegisterRoutes(api)
 
-	account := account.NewServer(&cfg, pool, &accessTokenSvc)
+	account := account.NewServer(&cfg, pool, &accessTokenSvc, authSvc)
 	account.RegisterRoutes(api)
 
 	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, authSvc)

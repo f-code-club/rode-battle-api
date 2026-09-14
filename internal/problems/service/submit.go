@@ -19,6 +19,9 @@ type CreateSubmission = repository.CreateSubmissionParams
 
 func (s *Service) CreateSubmission(ctx context.Context, problemID uuid.UUID, accountID uuid.UUID, language Language, code string) (uuid.UUID, error) {
 	cfg, err := env.ParseAs[shared.Config]()
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create submission", err)
+	}
 	var pgErr *pgconn.PgError
 	queries := repository.New(s.pool)
 

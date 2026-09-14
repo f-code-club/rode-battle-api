@@ -9,12 +9,14 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/problems/service"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Server struct {
 	service        service.Service
 	accessTokenSvc *shared.TokenService
 	s3             *shared.S3Service
+	channel        *amqp.Channel
 }
 
 func NewServer(
@@ -22,10 +24,11 @@ func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
 	s3 *shared.S3Service,
+	channel *amqp.Channel,
 ) Server {
-	service := service.New(pool, s3)
+	service := service.New(pool, s3, channel)
 
-	return Server{service, accessTokenSvc, s3}
+	return Server{service, accessTokenSvc, s3, channel}
 }
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {

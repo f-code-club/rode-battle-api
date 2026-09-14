@@ -3,6 +3,8 @@ package shared
 type Config struct {
 	Port                int    `env:"PORT" envDefault:"3000"`
 	DatabaseURL         string `env:"DATABASE_URL"`
+	AmqpURL             string `env:"AMQP_URL"`
+	TaskQueue           string `env:"TASK_QUEUE" envDefault:"task"`
 	CorsOrigin          string `env:"CORS_ORIGIN" envDefault:"*"`
 	JWTRefreshSecret    string `env:"JWT_REFRESH_SECRET" envDefault:"secret"`
 	JWTRefreshExpiredIn int    `env:"JWT_REFRESH_EXPIRED_IN" envDefault:"86400"`

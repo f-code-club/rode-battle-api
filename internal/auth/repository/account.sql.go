@@ -58,3 +58,16 @@ func (q *Queries) GetAccountByEmail(ctx context.Context, email string) (GetAccou
 	)
 	return i, err
 }
+
+const getRoleById = `-- name: GetRoleById :one
+SELECT role
+FROM accounts
+WHERE id = $1
+`
+
+func (q *Queries) GetRoleById(ctx context.Context, id uuid.UUID) (Role, error) {
+	row := q.db.QueryRow(ctx, getRoleById, id)
+	var role Role
+	err := row.Scan(&role)
+	return role, err
+}

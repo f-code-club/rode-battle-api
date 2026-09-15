@@ -7,3 +7,8 @@ WHERE id = @id AND is_banned = false;
 SELECT id, email, name, password, role, is_banned
 FROM accounts
 WHERE email = @email;
+
+-- name: GetRoleById :one
+SELECT role
+FROM accounts
+WHERE id = @id;

@@ -6,6 +6,7 @@ import (
 	"github.com/go-fuego/fuego/option"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	auth "github.com/f-code-club/rode-battle-api/internal/auth/service"
 	"github.com/f-code-club/rode-battle-api/internal/problems/service"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
@@ -16,6 +17,7 @@ type Server struct {
 	accessTokenSvc *shared.TokenService
 	s3             *shared.S3Service
 	amqp           *shared.AmqpService
+	authSvc        auth.Service
 }
 
 func NewServer(
@@ -23,19 +25,23 @@ func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
 	s3 *shared.S3Service,
-	channel *shared.AmqpService,
+	amqp *shared.AmqpService,
+	authSvc auth.Service,
 ) Server {
-	service := service.New(pool, s3, channel)
+	service := service.New(pool, s3, amqp)
 
-	return Server{service, accessTokenSvc, s3, channel}
+	return Server{service, accessTokenSvc, s3, amqp, authSvc}
 }
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {
 	m := middleware.NewParseToken(s.accessTokenSvc)
 
+	requireJury := middleware.NewRequireRole(s.authSvc, auth.Jury)
+
 	g := fuego.Group(f, "/problems")
 	fuego.Post(g, "/", s.CreateProblem,
 		option.Middleware(m),
+		option.Middleware(requireJury),
 		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
 	)
 	fuego.Get(g, "/{id}", s.GetProblem)

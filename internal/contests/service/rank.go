@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"math"
 	"net/http"
 	"sort"
 	"time"
+	"unicode"
 
 	"github.com/f-code-club/rode-battle-api/internal/contests/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
@@ -16,14 +16,14 @@ type Detail struct {
 	ProblemID       uuid.UUID `json:"problem_id"`
 	ProblemPosition int       `json:"problem_position"`
 	SubmissionCount int       `json:"submission_count"`
-	Score           int       `json:"score"`
+	Score           float64   `json:"score"`
 	LastSubmit      time.Time `json:"last_submit"`
 }
 
 type Ranking struct {
 	Name    string   `json:"name"`
 	Score   float64  `json:"score"`
-	Penalty float64  `json:"penalty"`
+	Penalty int      `json:"penalty"`
 	Details []Detail `json:"details"`
 }
 
@@ -32,6 +32,7 @@ type submissionRow = repository.GetContestSubmissionsRow
 const (
 	PenaltyPerSubmission = 10
 	ScorePerProblem      = 1
+	PenaltyPerCodeChar   = 1
 )
 
 func (s *Service) GetRank(
@@ -98,10 +99,11 @@ func buildRankings(rows []submissionRow, contestStart time.Time) []Ranking {
 	return result
 }
 
-func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail, float64, float64) {
+func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail, float64, int) {
 	details := make([]Detail, 0)
 
-	var totalScore, totalPenalty float64
+	var totalScore float64
+	var totalPenalty int
 
 	for i := 0; i < len(rows); {
 		problemID := rows[i].ProblemID
@@ -114,7 +116,7 @@ func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail
 		detail, penalty := calculateProblemResult(rows[i:problemEnd], contestStart)
 
 		details = append(details, detail)
-		totalScore += float64(detail.Score)
+		totalScore += detail.Score
 		totalPenalty += penalty
 
 		i = problemEnd
@@ -126,22 +128,24 @@ func buildAccountRanking(rows []submissionRow, contestStart time.Time) ([]Detail
 func calculateProblemResult(
 	submissions []submissionRow,
 	contestStart time.Time,
-) (Detail, float64) {
+) (Detail, int) {
 	if submissions[0].Language == repository.LanguageHtml {
-		return calculateCssProblemResult(submissions)
+		return calculateCssProblemResult(submissions, contestStart)
 	}
 
 	return calculateAlgorithmProblemResult(submissions, contestStart)
 }
 
-func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
+func calculateCssProblemResult(submissions []submissionRow, contestStart time.Time) (Detail, int) {
 	last := submissions[len(submissions)-1]
 	submissionCount := len(submissions)
 
-	var best float32
+	var best float64
+	var bestCode string
 	for _, sub := range submissions {
-		if sub.Score != nil && *sub.Score > best {
-			best = *sub.Score
+		if sub.Score != nil && float64(*sub.Score) > best {
+			best = float64(*sub.Score)
+			bestCode = sub.Code
 		}
 	}
 
@@ -149,11 +153,14 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 		ProblemID:       last.ProblemID,
 		ProblemPosition: int(*last.ProblemPosition),
 		SubmissionCount: submissionCount,
-		Score:           int(math.Round(float64(best))),
+		Score:           best,
 		LastSubmit:      last.CreatedAt,
 	}
 
-	penalty := float64(submissionCount * PenaltyPerSubmission)
+	codeLength := effectiveCSSLength(bestCode)
+
+	minutes := last.CreatedAt.Sub(contestStart).Minutes()
+	penalty := int(minutes) + submissionCount*PenaltyPerSubmission + codeLength*PenaltyPerCodeChar
 
 	return detail, penalty
 }
@@ -161,14 +168,14 @@ func calculateCssProblemResult(submissions []submissionRow) (Detail, float64) {
 func calculateAlgorithmProblemResult(
 	submissions []submissionRow,
 	contestStart time.Time,
-) (Detail, float64) {
+) (Detail, int) {
 	truncated, hasAccepted := truncateAtFirstAccepted(submissions)
 
 	last := truncated[len(truncated)-1]
 
 	submissionCount := len(truncated)
 
-	score := 0
+	var score float64
 	if hasAccepted {
 		score = ScorePerProblem
 	}
@@ -183,10 +190,10 @@ func calculateAlgorithmProblemResult(
 		LastSubmit:      lastSubmit,
 	}
 
-	penalty := 0.0
+	penalty := 0
 	if hasAccepted {
 		minutes := lastSubmit.Sub(contestStart).Minutes()
-		penalty = minutes + float64(submissionCount*PenaltyPerSubmission)
+		penalty = int(minutes) + submissionCount*PenaltyPerSubmission
 	}
 
 	return detail, penalty
@@ -202,4 +209,15 @@ func truncateAtFirstAccepted(
 	}
 
 	return submissions, false
+}
+
+func effectiveCSSLength(code string) int {
+	count := 0
+	for _, r := range code {
+		if unicode.IsSpace(r) {
+			continue
+		}
+		count++
+	}
+	return count
 }

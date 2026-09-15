@@ -9,7 +9,7 @@ type AmqpService struct {
 	Queue   amqp.Queue
 }
 
-func NewRabbitChannel(url string, taskQueue string) (*AmqpService, error) {
+func NewRabbitService(url string, taskQueue string) (*AmqpService, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, err

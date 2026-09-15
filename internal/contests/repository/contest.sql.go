@@ -77,6 +77,7 @@ SELECT
     s.language,
     s.verdict,
     s.score,
+    s.code,
     s.created_at
 FROM submissions s
 INNER JOIN problems p ON p.id = s.problem_id
@@ -97,6 +98,7 @@ type GetContestSubmissionsRow struct {
 	Language        Language
 	Verdict         *Verdict
 	Score           *float32
+	Code            string
 	CreatedAt       time.Time
 }
 
@@ -117,6 +119,7 @@ func (q *Queries) GetContestSubmissions(ctx context.Context, contestID uuid.UUID
 			&i.Language,
 			&i.Verdict,
 			&i.Score,
+			&i.Code,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

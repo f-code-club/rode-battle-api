@@ -1,6 +1,7 @@
 package http
 
 import (
+	auth "github.com/f-code-club/rode-battle-api/internal/auth/service"
 	"github.com/f-code-club/rode-battle-api/internal/contests/service"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
@@ -13,28 +14,33 @@ import (
 type Server struct {
 	service        service.Service
 	accessTokenSvc *shared.TokenService
+	authSvc        auth.Service
 }
 
 func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
+	authSvc auth.Service,
 ) Server {
 	service := service.New(pool)
 
 	return Server{
 		service:        service,
 		accessTokenSvc: accessTokenSvc,
+		authSvc:        authSvc,
 	}
 }
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {
 	m := middleware.NewParseToken(s.accessTokenSvc)
 
+	requireJury := middleware.NewRequireRole(s.authSvc, auth.Jury)
+
 	g := fuego.Group(f, "/contests")
 
-	// TODO: RequireRole(JURY)
 	fuego.Post(g, "", s.CreateContest,
 		option.Middleware(m),
+		option.Middleware(requireJury),
 		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
 	)
 

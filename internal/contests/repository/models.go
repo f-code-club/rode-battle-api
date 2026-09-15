@@ -179,6 +179,7 @@ type Problem struct {
 	MemoryLimit     *int32
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	ColorCode       *string
 }
 
 type ProblemLanguage struct {

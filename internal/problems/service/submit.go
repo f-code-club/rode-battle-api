@@ -58,6 +58,9 @@ func (s *Service) CreateSubmission(ctx context.Context, problemID uuid.UUID, acc
 		ContentType: "text/plain",
 		Body:        []byte(submissionID[:]),
 	})
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to publish to queue", err)
+	}
 
 	return submissionID, nil
 }

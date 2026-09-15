@@ -8,8 +8,9 @@ import (
 type Service struct {
 	pool *pgxpool.Pool
 	s3   *shared.S3Service
+	amqp *shared.AmqpService
 }
 
-func New(pool *pgxpool.Pool, s3 *shared.S3Service) Service {
-	return Service{pool, s3}
+func New(pool *pgxpool.Pool, s3 *shared.S3Service, channel *shared.AmqpService) Service {
+	return Service{pool, s3, channel}
 }

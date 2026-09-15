@@ -62,6 +62,10 @@ func build() (*fuego.Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	amqp, err := shared.NewRabbitService(cfg.AmqpURL, cfg.TaskQueue)
+	if err != nil {
+		return nil, err
+	}
 	accessTokenSvc := shared.NewTokenService(cfg.JWTAccessSecret, cfg.JWTAccessExpiredIn)
 	refreshTokenSvc := shared.NewTokenService(cfg.JWTRefreshSecret, cfg.JWTRefreshExpiredIn)
 	authSvc := authSvc.New(pool, &refreshTokenSvc, &accessTokenSvc)
@@ -113,7 +117,7 @@ func build() (*fuego.Server, error) {
 	account := account.NewServer(&cfg, pool, &accessTokenSvc, authSvc)
 	account.RegisterRoutes(api)
 
-	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, authSvc)
+	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, authSvc)
 	problem.RegisterRoutes(api)
 
 	contest := contest.NewServer(pool, &accessTokenSvc, authSvc)

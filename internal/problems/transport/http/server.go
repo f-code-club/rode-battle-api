@@ -16,6 +16,7 @@ type Server struct {
 	service        service.Service
 	accessTokenSvc *shared.TokenService
 	s3             *shared.S3Service
+	amqp           *shared.AmqpService
 	authSvc        auth.Service
 }
 
@@ -24,11 +25,12 @@ func NewServer(
 	pool *pgxpool.Pool,
 	accessTokenSvc *shared.TokenService,
 	s3 *shared.S3Service,
+	amqp *shared.AmqpService,
 	authSvc auth.Service,
 ) Server {
-	service := service.New(pool, s3)
+	service := service.New(pool, s3, amqp)
 
-	return Server{service, accessTokenSvc, s3, authSvc}
+	return Server{service, accessTokenSvc, s3, amqp, authSvc}
 }
 
 func (s *Server) RegisterRoutes(f *fuego.Server) {

@@ -61,7 +61,7 @@ func build() (*fuego.Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	channel, err := shared.NewRabbitChannel(cfg.AmqpURL)
+	channel, err := shared.NewRabbitChannel(cfg.AmqpURL, cfg.TaskQueue)
 	if err != nil {
 		return nil, err
 	}

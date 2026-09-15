@@ -6,17 +6,10 @@ import (
 
 	"github.com/f-code-club/rode-battle-api/internal/auth/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
-	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
 	"github.com/google/uuid"
 )
 
-func (s *Service) RequireRole(roles ...Role) func(http.Handler) http.Handler {
-	return middleware.NewRequireRole(func(ctx context.Context, id uuid.UUID) (bool, error) {
-		return s.hasRole(ctx, id, roles...)
-	})
-}
-
-func (s *Service) hasRole(ctx context.Context, id uuid.UUID, roles ...Role) (bool, error) {
+func (s *Service) HasRole(ctx context.Context, id uuid.UUID, roles ...Role) (bool, error) {
 	queries := repository.New(s.pool)
 
 	role, err := queries.GetRoleById(ctx, id)

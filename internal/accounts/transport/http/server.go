@@ -33,7 +33,7 @@ func NewServer(
 func (s *Server) RegisterRoutes(f *fuego.Server) {
 	m := middleware.NewParseToken(s.accessTokenSvc)
 
-	requireAdmin := s.authSvc.RequireRole(auth.Admin)
+	requireAdmin := middleware.NewRequireRole(s.authSvc, auth.Admin)
 
 	g := fuego.Group(f, "/accounts")
 	fuego.Post(g, "/generate", s.Generate,

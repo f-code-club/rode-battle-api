@@ -1,16 +1,14 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 
+	"github.com/f-code-club/rode-battle-api/internal/auth/service"
 	"github.com/go-fuego/fuego"
 	"github.com/google/uuid"
 )
 
-type CheckRoleFunc func(ctx context.Context, accountID uuid.UUID) (bool, error)
-
-func NewRequireRole(check CheckRoleFunc) func(http.Handler) http.Handler {
+func NewRequireRole(authSvc service.Service, roles ...service.Role) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			accountID, ok := r.Context().Value(AccountIDKey).(uuid.UUID)
@@ -21,7 +19,7 @@ func NewRequireRole(check CheckRoleFunc) func(http.Handler) http.Handler {
 				return
 			}
 
-			allowed, err := check(r.Context(), accountID)
+			allowed, err := authSvc.HasRole(r.Context(), accountID, roles...)
 			if err != nil {
 				fuego.SendJSONError(w, nil, fuego.UnauthorizedError{
 					Detail: "unauthorized: failed to verify role",

@@ -34,7 +34,7 @@ func NewServer(
 func (s *Server) RegisterRoutes(f *fuego.Server) {
 	m := middleware.NewParseToken(s.accessTokenSvc)
 
-	requireJury := s.authSvc.RequireRole(auth.Jury)
+	requireJury := middleware.NewRequireRole(s.authSvc, auth.Jury)
 
 	g := fuego.Group(f, "/problems")
 	fuego.Post(g, "/", s.CreateProblem,

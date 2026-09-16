@@ -17,6 +17,7 @@ type Config struct {
 	AwsAccessKeyID      string `env:"AWS_ACCESS_KEY_ID"`
 	AwsSecretAccessKey  string `env:"AWS_SECRET_ACCESS_KEY"`
 	S3Bucket            string `env:"S3_BUCKET"`
-	S3Region            string `env:"S3_REGION"`
+	AwsRegion           string `env:"AWS_REGION"`
 	AwsEndpointURL      string `env:"AWS_ENDPOINT_URL"`
+	JudgeURL            string `env:"JUDGE_URL"`
 }

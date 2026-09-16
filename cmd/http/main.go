@@ -52,7 +52,7 @@ func build() (*fuego.Server, error) {
 	}
 	s3Service, err := shared.NewS3Service(context.Background(), shared.S3Config{
 		Bucket:   cfg.S3Bucket,
-		Region:   cfg.S3Region,
+		Region:   cfg.AwsRegion,
 		Endpoint: cfg.AwsEndpointURL,
 	})
 	if err != nil {

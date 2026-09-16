@@ -52,7 +52,7 @@ func build() (*fuego.Server, error) {
 	}
 	s3Service, err := shared.NewS3Service(context.Background(), shared.S3Config{
 		Bucket:   cfg.S3Bucket,
-		Region:   cfg.S3Region,
+		Region:   cfg.AwsRegion,
 		Endpoint: cfg.AwsEndpointURL,
 	})
 	if err != nil {
@@ -117,7 +117,7 @@ func build() (*fuego.Server, error) {
 	account := account.NewServer(&cfg, pool, &accessTokenSvc, authSvc)
 	account.RegisterRoutes(api)
 
-	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, authSvc)
+	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, cfg.JudgeURL, authSvc)
 	problem.RegisterRoutes(api)
 
 	contest := contest.NewServer(pool, &accessTokenSvc, authSvc)

@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/problems/repository"
+	"github.com/f-code-club/rode-battle-api/internal/shared"
 	apperr "github.com/f-code-club/rode-battle-api/internal/shared/errors"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
@@ -57,10 +60,15 @@ type CreateProblemInput struct {
 	Name            string
 	Content         string
 	CheckerLanguage *Language
-	CheckerPath     *string
+	CheckerCode     *string
 	TimeLimit       *int32
 	MemoryLimit     *int32
 	ColorCode       *string
+}
+
+type CompileRequest struct {
+	Code     string `json:"code"`
+	Language string `json:"language"`
 }
 
 func (s *Service) GetProblem(ctx context.Context, id uuid.UUID) (*Problem, error) {
@@ -123,7 +131,10 @@ func (s *Service) GetSubmitHistory(ctx context.Context, problemID uuid.UUID, acc
 
 func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, language []string) (uuid.UUID, error) {
 	var pgErr *pgconn.PgError
-	content := input.Content
+	key, err := shared.RandomKey("problems")
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to random key", err)
+	}
 
 	requiredAlgoInput := false
 	for _, lang := range language {
@@ -136,29 +147,58 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 		}
 	}
 
-	if requiredAlgoInput && (input.CheckerPath == nil || input.CheckerLanguage == nil || input.MemoryLimit == nil || input.TimeLimit == nil) {
+	if requiredAlgoInput && (input.CheckerCode == nil || input.CheckerLanguage == nil || input.MemoryLimit == nil || input.TimeLimit == nil) {
 		return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Cannot leave checker_code, checker_language, time_limit, memory_limit empty", nil)
 	}
 
+	content := input.Content
+	var checkerPath *string
 	if !requiredAlgoInput {
-		raw, err := uuid.NewRandom()
+		contentKey, err := shared.RandomKey("problems")
 		if err != nil {
-			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "error generating password", err)
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to random key", err)
 		}
 		decoded, err := base64.StdEncoding.DecodeString(input.Content)
 		if err != nil {
 			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Faield to decode base64", err)
 		}
-
-		content = fmt.Sprintf("problems/%s", raw.String())
-
 		mime := mimetype.Detect(decoded)
 		file := bytes.NewReader(decoded)
 
-		err = s.s3.UploadFile(context.TODO(), content, file, mime.String())
+		err = s.s3.UploadFile(ctx, contentKey, file, mime.String())
 		if err != nil {
 			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to upload problems to storage", err)
 		}
+
+		content = contentKey
+	} else {
+		checkerBody, err := json.Marshal(CompileRequest{
+			Code:     *input.CheckerCode,
+			Language: string(*input.CheckerLanguage),
+		})
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create problem", err)
+		}
+		res, err := http.Post(fmt.Sprintf("%s/compile", s.judgeURL), "application/json; charset=utf-8", bytes.NewBuffer(checkerBody))
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create problem", err)
+		}
+		defer func() {
+			_ = res.Body.Close()
+		}()
+		if res.StatusCode != http.StatusOK {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to compile checker", err)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to read compile file", err)
+		}
+		err = s.s3.UploadFile(ctx, key, bytes.NewReader(body), "application/octet-stream")
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to upload problems to storage", err)
+		}
+		checkerPath = &key
 	}
 
 	tx, err := s.pool.Begin(ctx)
@@ -175,7 +215,7 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 		Name:            input.Name,
 		Content:         content,
 		CheckerLanguage: input.CheckerLanguage,
-		CheckerPath:     input.CheckerPath,
+		CheckerPath:     checkerPath,
 		TimeLimit:       input.TimeLimit,
 		MemoryLimit:     input.MemoryLimit,
 		ColorCode:       input.ColorCode,

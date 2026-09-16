@@ -189,6 +189,9 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 		}
 
 		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to read compile file", err)
+		}
 		err = s.s3.UploadFile(ctx, key, bytes.NewReader(body), "application/octet-stream")
 		if err != nil {
 			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to upload problems to storage", err)

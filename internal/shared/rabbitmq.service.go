@@ -26,9 +26,7 @@ func NewRabbitService(url string, taskQueue string) (*AmqpService, error) {
 		false,
 		false,
 		false,
-		amqp.Table{
-			amqp.QueueTypeArg: amqp.QueueTypeQuorum,
-		},
+		nil,
 	)
 	if err != nil {
 		return nil, err

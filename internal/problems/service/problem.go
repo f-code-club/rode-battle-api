@@ -183,7 +183,9 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 		if err != nil {
 			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create problem", err)
 		}
-		defer res.Body.Close()
+		defer func() {
+			_ = res.Body.Close()
+		}()
 		if res.StatusCode != http.StatusOK {
 			return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to compile checker", err)
 		}

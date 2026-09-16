@@ -6,11 +6,12 @@ import (
 )
 
 type Service struct {
-	pool *pgxpool.Pool
-	s3   *shared.S3Service
-	amqp *shared.AmqpService
+	pool     *pgxpool.Pool
+	s3       *shared.S3Service
+	amqp     *shared.AmqpService
+	judgeURL string
 }
 
-func New(pool *pgxpool.Pool, s3 *shared.S3Service, channel *shared.AmqpService) Service {
-	return Service{pool, s3, channel}
+func New(pool *pgxpool.Pool, s3 *shared.S3Service, channel *shared.AmqpService, judgeURL string) Service {
+	return Service{pool, s3, channel, judgeURL}
 }

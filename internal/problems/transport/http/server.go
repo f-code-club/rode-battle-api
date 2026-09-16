@@ -26,9 +26,10 @@ func NewServer(
 	accessTokenSvc *shared.TokenService,
 	s3 *shared.S3Service,
 	amqp *shared.AmqpService,
+	judgeUrl string,
 	authSvc auth.Service,
 ) Server {
-	service := service.New(pool, s3, amqp)
+	service := service.New(pool, s3, amqp, judgeUrl)
 
 	return Server{service, accessTokenSvc, s3, amqp, authSvc}
 }

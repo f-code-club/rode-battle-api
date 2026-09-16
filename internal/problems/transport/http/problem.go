@@ -52,7 +52,7 @@ func (s *Server) CreateProblem(c fuego.ContextWithBody[CreateProblemRequest]) (u
 		Name:            body.Name,
 		Content:         body.Content,
 		CheckerLanguage: body.CheckerLanguage,
-		CheckerPath:     body.CheckerCode,
+		CheckerCode:     body.CheckerCode,
 		TimeLimit:       body.TimeLimit,
 		MemoryLimit:     body.MemoryLimit,
 		ColorCode:       body.ColorCode,

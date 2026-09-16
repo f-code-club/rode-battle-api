@@ -117,7 +117,7 @@ func build() (*fuego.Server, error) {
 	account := account.NewServer(&cfg, pool, &accessTokenSvc, authSvc)
 	account.RegisterRoutes(api)
 
-	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, authSvc)
+	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, cfg.JudgeURL, authSvc)
 	problem.RegisterRoutes(api)
 
 	contest := contest.NewServer(pool, &accessTokenSvc, authSvc)

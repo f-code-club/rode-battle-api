@@ -35,7 +35,7 @@ func (s *Service) CreateSubmission(ctx context.Context, problemID uuid.UUID, acc
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = s.amqp.Channel.PublishWithContext(ctx, "", s.amqp.Queue.Name, false, false, amqp.Publishing{
+	err = s.amqp.Publish(ctx, "", s.amqp.Queue.Name, false, false, amqp.Publishing{
 		ContentType: "text/plain",
 		Body:        []byte(submissionID[:]),
 	})

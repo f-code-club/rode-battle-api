@@ -80,6 +80,7 @@ func build() (*fuego.Server, error) {
 
 	f := fuego.NewServer(
 		fuego.WithAddr(fmt.Sprintf(":%d", cfg.Port)),
+		fuego.WithMaxBodySize(10*1024*1024),
 		fuego.WithGlobalMiddlewares(middleware.NewCors(cfg.CorsOrigin)),
 		fuego.WithEngineOptions(
 			fuego.WithErrorHandler(middleware.ValidationErrorHandler),

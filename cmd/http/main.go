@@ -12,10 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/caarlos0/env/v11"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-fuego/fuego"
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	_ "github.com/joho/godotenv/autoload"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
 
 	account "github.com/f-code-club/rode-battle-api/internal/accounts/transport/http"
 	authSvc "github.com/f-code-club/rode-battle-api/internal/auth/service"
@@ -26,7 +25,7 @@ import (
 	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
 )
 
-func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
+func gracefulShutdown(server *http.Server, done chan bool) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -36,7 +35,7 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := apiServer.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
 
@@ -45,7 +44,7 @@ func gracefulShutdown(apiServer *fuego.Server, done chan bool) {
 	done <- true
 }
 
-func build() (*fuego.Server, error) {
+func build() (*http.Server, error) {
 	cfg, err := env.ParseAs[shared.Config]()
 	if err != nil {
 		return nil, err
@@ -78,52 +77,46 @@ func build() (*fuego.Server, error) {
 		fmt.Printf("  - %s\n", aws.ToString(b.Name))
 	}
 
-	f := fuego.NewServer(
-		fuego.WithAddr(fmt.Sprintf(":%d", cfg.Port)),
-		fuego.WithGlobalMiddlewares(middleware.NewCors(cfg.CorsOrigin)),
-		fuego.WithEngineOptions(
-			fuego.WithErrorHandler(middleware.ValidationErrorHandler),
-			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
-				UIHandler: func(specURL string) http.Handler {
-					return httpSwagger.Handler(
-						httpSwagger.Layout(httpSwagger.StandaloneLayout),
-						httpSwagger.PersistAuthorization(true),
-						httpSwagger.URL(specURL),
-					)
-				},
-				DisableDefaultServer: true,
-				DisableMessages:      true,
-				Info: &openapi3.Info{
-					Title:       "R.ODE API",
-					Description: "R.ODE API",
-				},
-			}),
-		),
-		fuego.WithSecurity(openapi3.SecuritySchemes{
-			"bearerAuth": &openapi3.SecuritySchemeRef{
-				Value: openapi3.NewSecurityScheme().
-					WithType("http").
-					WithScheme("bearer").
-					WithBearerFormat("JWT").
-					WithDescription("Enter your JWT token in the format: Bearer <token>"),
-			},
-		}),
-	)
-	api := fuego.Group(f, "/api/v1")
+	mux := http.NewServeMux()
 
-	auth := auth.NewServer(&cfg, pool, &accessTokenSvc)
-	auth.RegisterRoutes(api)
+	config := huma.DefaultConfig("R.ODE API", "1.0.0")
+	config.Info.Description = "R.ODE API"
+	config.DocsRenderer = huma.DocsRendererSwaggerUI
+	config.DocsRendererConfig = map[string]any{
+		"persistAuthorization": true,
+	}
+	config.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		"bearerAuth": {
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "JWT",
+			Description:  "Enter your JWT token in the format: Bearer <token>",
+		},
+	}
 
-	account := account.NewServer(&cfg, pool, &accessTokenSvc, authSvc)
-	account.RegisterRoutes(api)
+	api := humago.New(mux, config)
+	apiV1 := huma.NewGroup(api, "/api/v1")
 
-	problem := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, cfg.JudgeURL, authSvc)
-	problem.RegisterRoutes(api)
+	authServer := auth.NewServer(&cfg, pool, &accessTokenSvc)
+	authServer.RegisterRoutes(apiV1)
 
-	contest := contest.NewServer(pool, &accessTokenSvc, authSvc)
-	contest.RegisterRoutes(f)
+	accountServer := account.NewServer(&cfg, pool, &accessTokenSvc, authSvc)
+	accountServer.RegisterRoutes(apiV1)
 
-	return f, nil
+	problemServer := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, cfg.JudgeURL, authSvc)
+	problemServer.RegisterRoutes(apiV1)
+
+	contestServer := contest.NewServer(pool, &accessTokenSvc, authSvc)
+	contestServer.RegisterRoutes(api)
+
+	corsHandler := middleware.NewCors(cfg.CorsOrigin)(mux)
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
+		Handler: corsHandler,
+	}
+
+	return server, nil
 }
 
 func main() {
@@ -135,7 +128,7 @@ func main() {
 
 	go gracefulShutdown(server, done)
 
-	err = server.Run()
+	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}

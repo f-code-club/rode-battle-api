@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-fuego/fuego"
-	"github.com/go-fuego/fuego/option"
+	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/service"
@@ -34,24 +34,53 @@ func NewServer(
 	return Server{service, accessTokenSvc, s3, amqp, authSvc}
 }
 
-func (s *Server) RegisterRoutes(f *fuego.Server) {
-	m := middleware.NewParseToken(s.accessTokenSvc)
+func (s *Server) RegisterRoutes(api huma.API) {
+	m := middleware.NewParseToken(api, s.accessTokenSvc)
+	requireJury := middleware.NewRequireRole(api, s.authSvc, auth.Jury)
 
-	requireJury := middleware.NewRequireRole(s.authSvc, auth.Jury)
+	g := huma.NewGroup(api, "/problems")
 
-	g := fuego.Group(f, "/problems")
-	fuego.Post(g, "/", s.CreateProblem,
-		option.Middleware(m),
-		option.Middleware(requireJury),
-		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
-	)
-	fuego.Get(g, "/{id}", s.GetProblem)
-	fuego.Get(g, "/{id}/history", s.GetSubmitHistory,
-		option.Middleware(m),
-		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
-	)
-	fuego.Post(g, "/{id}/submit", s.CreateSubmission,
-		option.Middleware(m),
-		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
-	)
+	huma.Register(g, huma.Operation{
+		OperationID: "problems-create",
+		Method:      http.MethodPost,
+		Path:        "",
+		Summary:     "Create a problem",
+		Tags:        []string{"problems"},
+		Middlewares: huma.Middlewares{m, requireJury},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.CreateProblem)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "problems-get",
+		Method:      http.MethodGet,
+		Path:        "/{id}",
+		Summary:     "Get problem detail",
+		Tags:        []string{"problems"},
+	}, s.GetProblem)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "problems-get-history",
+		Method:      http.MethodGet,
+		Path:        "/{id}/history",
+		Summary:     "Get submission history for problem",
+		Tags:        []string{"problems"},
+		Middlewares: huma.Middlewares{m},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.GetSubmitHistory)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "problems-create-submission",
+		Method:      http.MethodPost,
+		Path:        "/{id}/submit",
+		Summary:     "Create submission for problem",
+		Tags:        []string{"problems"},
+		Middlewares: huma.Middlewares{m},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.CreateSubmission)
 }

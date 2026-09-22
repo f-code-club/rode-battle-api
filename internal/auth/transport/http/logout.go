@@ -1,17 +1,24 @@
 package http
 
 import (
+	"context"
 	"net/http"
-
-	"github.com/go-fuego/fuego"
 )
 
-func (s *Server) Logout(c fuego.ContextNoBody) (string, error) {
-	c.SetCookie(http.Cookie{
-		Name:   refreshTokenCookie,
-		Value:  "",
-		MaxAge: -1,
-	})
+type LogoutInput struct{}
 
-	return "Logged out successfully", nil
+type LogoutOutput struct {
+	SetCookie http.Cookie `header:"Set-Cookie"`
+	Body      string
+}
+
+func (s *Server) Logout(ctx context.Context, input *LogoutInput) (*LogoutOutput, error) {
+	return &LogoutOutput{
+		SetCookie: http.Cookie{
+			Name:   refreshTokenCookie,
+			Value:  "",
+			MaxAge: -1,
+		},
+		Body: "Logged out successfully",
+	}, nil
 }

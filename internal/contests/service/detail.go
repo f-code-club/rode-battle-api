@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Problem struct {
+type ContestProblem struct {
 	ID       uuid.UUID `json:"id"`
 	Position int       `json:"position"`
 	Name     string    `json:"name"`
@@ -23,7 +23,7 @@ type ContestDetail struct {
 	Name     string    `json:"name"`
 	Start    time.Time `json:"start"`
 	End      time.Time `json:"end"`
-	Problems []Problem `json:"problems"`
+	Problems []ContestProblem `json:"problems"`
 }
 
 func (s *Service) GetContestDetail(
@@ -58,9 +58,9 @@ func (s *Service) GetContestDetail(
 		)
 	}
 
-	problemList := make([]Problem, 0, len(problems))
+	problemList := make([]ContestProblem, 0, len(problems))
 	for _, p := range problems {
-		problemList = append(problemList, Problem{
+		problemList = append(problemList, ContestProblem{
 			ID:       p.ID,
 			Position: int(*p.Position),
 			Name:     p.Name,

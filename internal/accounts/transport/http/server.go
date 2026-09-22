@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-fuego/fuego"
-	"github.com/go-fuego/fuego/option"
+	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/f-code-club/rode-battle-api/internal/accounts/service"
@@ -30,15 +30,21 @@ func NewServer(
 	return Server{service, accessTokenSvc, authSvc}
 }
 
-func (s *Server) RegisterRoutes(f *fuego.Server) {
-	m := middleware.NewParseToken(s.accessTokenSvc)
+func (s *Server) RegisterRoutes(api huma.API) {
+	m := middleware.NewParseToken(api, s.accessTokenSvc)
+	requireAdmin := middleware.NewRequireRole(api, s.authSvc, auth.Admin)
 
-	requireAdmin := middleware.NewRequireRole(s.authSvc, auth.Admin)
+	g := huma.NewGroup(api, "/accounts")
 
-	g := fuego.Group(f, "/accounts")
-	fuego.Post(g, "/generate", s.Generate,
-		option.Middleware(m),
-		option.Middleware(requireAdmin),
-		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
-	)
+	huma.Register(g, huma.Operation{
+		OperationID: "accounts-generate",
+		Method:      http.MethodPost,
+		Path:        "/generate",
+		Summary:     "Generate account",
+		Tags:        []string{"accounts"},
+		Middlewares: huma.Middlewares{m, requireAdmin},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.Generate)
 }

@@ -1,14 +1,15 @@
 package http
 
 import (
+	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/service"
 	"github.com/f-code-club/rode-battle-api/internal/contests/service"
 	"github.com/f-code-club/rode-battle-api/internal/shared"
 	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-fuego/fuego"
-	"github.com/go-fuego/fuego/option"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
@@ -31,20 +32,45 @@ func NewServer(
 	}
 }
 
-func (s *Server) RegisterRoutes(f *fuego.Server) {
-	m := middleware.NewParseToken(s.accessTokenSvc)
+func (s *Server) RegisterRoutes(api huma.API) {
+	m := middleware.NewParseToken(api, s.accessTokenSvc)
+	requireJury := middleware.NewRequireRole(api, s.authSvc, auth.Jury)
 
-	requireJury := middleware.NewRequireRole(s.authSvc, auth.Jury)
+	g := huma.NewGroup(api, "/contests")
 
-	g := fuego.Group(f, "/contests")
+	huma.Register(g, huma.Operation{
+		OperationID: "contests-create",
+		Method:      http.MethodPost,
+		Path:        "",
+		Summary:     "Create a new contest",
+		Tags:        []string{"contests"},
+		Middlewares: huma.Middlewares{m, requireJury},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.CreateContest)
 
-	fuego.Post(g, "", s.CreateContest,
-		option.Middleware(m),
-		option.Middleware(requireJury),
-		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
-	)
+	huma.Register(g, huma.Operation{
+		OperationID: "contests-get-rank",
+		Method:      http.MethodGet,
+		Path:        "/{id}/rank",
+		Summary:     "Get contest ranking",
+		Tags:        []string{"contests"},
+	}, s.GetRank)
 
-	fuego.Get(g, "/{id}/rank", s.GetRank)
-	fuego.Get(g, "", s.ListContests)
-	fuego.Get(g, "/{id}", s.GetContestDetail)
+	huma.Register(g, huma.Operation{
+		OperationID: "contests-list",
+		Method:      http.MethodGet,
+		Path:        "",
+		Summary:     "List contests",
+		Tags:        []string{"contests"},
+	}, s.ListContests)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "contests-get-detail",
+		Method:      http.MethodGet,
+		Path:        "/{id}",
+		Summary:     "Get contest detail",
+		Tags:        []string{"contests"},
+	}, s.GetContestDetail)
 }

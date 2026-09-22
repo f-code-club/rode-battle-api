@@ -1,18 +1,25 @@
 package http
 
 import (
-	"github.com/f-code-club/rode-battle-api/internal/contests/service"
-	"github.com/go-fuego/fuego"
+	"context"
+
 	"github.com/google/uuid"
+
+	"github.com/f-code-club/rode-battle-api/internal/contests/service"
 )
 
-func (s *Server) GetRank(c fuego.ContextNoBody) ([]service.Ranking, error) {
-	id := c.PathParam("id")
+type GetRankInput struct {
+	ID uuid.UUID `path:"id"`
+}
 
-	contestID, err := uuid.Parse(id)
+type GetRankOutput struct {
+	Body []service.Ranking
+}
+
+func (s *Server) GetRank(ctx context.Context, input *GetRankInput) (*GetRankOutput, error) {
+	rankings, err := s.service.GetRank(ctx, input.ID)
 	if err != nil {
-		return nil, fuego.BadRequestError{Title: "Invalid uuid", Err: err}
+		return nil, err
 	}
-
-	return s.service.GetRank(c.Context(), contestID)
+	return &GetRankOutput{Body: rankings}, nil
 }

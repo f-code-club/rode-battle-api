@@ -1,18 +1,26 @@
 package http
 
 import (
-	"github.com/f-code-club/rode-battle-api/internal/contests/service"
-	"github.com/go-fuego/fuego"
+	"context"
+
 	"github.com/google/uuid"
+
+	"github.com/f-code-club/rode-battle-api/internal/contests/service"
 )
 
-func (s *Server) GetContestDetail(c fuego.ContextNoBody) (service.ContestDetail, error) {
-	id := c.PathParam("id")
+type GetContestDetailInput struct {
+	ID uuid.UUID `path:"id"`
+}
 
-	contestID, err := uuid.Parse(id)
+type GetContestDetailOutput struct {
+	Body service.ContestDetail
+}
+
+func (s *Server) GetContestDetail(ctx context.Context, input *GetContestDetailInput) (*GetContestDetailOutput, error) {
+	detail, err := s.service.GetContestDetail(ctx, input.ID)
 	if err != nil {
-		return service.ContestDetail{}, fuego.BadRequestError{Title: "Invalid uuid", Err: err}
+		return nil, err
 	}
 
-	return s.service.GetContestDetail(c.Context(), contestID)
+	return &GetContestDetailOutput{Body: detail}, nil
 }

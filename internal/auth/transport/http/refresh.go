@@ -1,15 +1,28 @@
 package http
 
-import "github.com/go-fuego/fuego"
+import (
+	"context"
 
-func (s *Server) Refresh(c fuego.ContextNoBody) (string, error) {
-	refreshToken, err := c.Cookie(refreshTokenCookie)
-	if err != nil {
-		return "", fuego.UnauthorizedError{
-			Err:    err,
-			Detail: "refresh token not found",
-		}
+	"github.com/danielgtaylor/huma/v2"
+)
+
+type RefreshInput struct {
+	RefreshToken string `cookie:"refresh_token"`
+}
+
+type RefreshOutput struct {
+	Body string
+}
+
+func (s *Server) Refresh(ctx context.Context, input *RefreshInput) (*RefreshOutput, error) {
+	if input.RefreshToken == "" {
+		return nil, huma.Error401Unauthorized("refresh token not found")
 	}
 
-	return s.service.Refresh(c.Context(), refreshToken.Value)
+	accessToken, err := s.service.Refresh(ctx, input.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RefreshOutput{Body: accessToken}, nil
 }

@@ -19,10 +19,10 @@ type ContestProblem struct {
 }
 
 type ContestDetail struct {
-	ID       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	Start    time.Time `json:"start"`
-	End      time.Time `json:"end"`
+	ID       uuid.UUID        `json:"id"`
+	Name     string           `json:"name"`
+	Start    time.Time        `json:"start"`
+	End      time.Time        `json:"end"`
 	Problems []ContestProblem `json:"problems"`
 }
 

@@ -29,7 +29,7 @@ func (e Error) Error() string {
 	return e.Detail
 }
 func (e Error) StatusCode() int { return e.Status }
-func (e Error) GetStatus() int   { return e.Status }
+func (e Error) GetStatus() int  { return e.Status }
 
 func (e Error) DetailMsg() string {
 	return e.Detail

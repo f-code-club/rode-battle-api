@@ -49,6 +49,11 @@ func (s *Service) GetContestDetail(
 		)
 	}
 
+	now := time.Now()
+	if now.Before(contest.Start) {
+		return ContestDetail{}, apperr.Wrap(http.StatusBadRequest, "Contest not start yet", nil)
+	}
+
 	problems, err := queries.GetProblemsByContest(ctx, contestID)
 	if err != nil {
 		return ContestDetail{}, apperr.Wrap(

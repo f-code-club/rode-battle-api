@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-fuego/fuego"
-	"github.com/go-fuego/fuego/option"
+	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/f-code-club/rode-battle-api/internal/auth/service"
@@ -29,15 +29,44 @@ func NewServer(
 	return Server{service, accessTokenSvc}
 }
 
-func (s *Server) RegisterRoutes(f *fuego.Server) {
-	m := middleware.NewParseToken(s.accessTokenSvc)
+func (s *Server) RegisterRoutes(api huma.API) {
+	m := middleware.NewParseToken(api, s.accessTokenSvc)
 
-	g := fuego.Group(f, "/auth")
-	fuego.Post(g, "/login", s.Login)
-	fuego.Get(g, "/refresh", s.Refresh)
-	fuego.Get(g, "/logout", s.Logout)
-	fuego.Get(g, "/me", s.Me,
-		option.Middleware(m),
-		option.Security(openapi3.SecurityRequirement{"bearerAuth": []string{}}),
-	)
+	g := huma.NewGroup(api, "/auth")
+
+	huma.Register(g, huma.Operation{
+		OperationID: "auth-login",
+		Method:      http.MethodPost,
+		Path:        "/login",
+		Summary:     "Log in with email and password",
+		Tags:        []string{"auth"},
+	}, s.Login)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "auth-refresh",
+		Method:      http.MethodGet,
+		Path:        "/refresh",
+		Summary:     "Refresh access token",
+		Tags:        []string{"auth"},
+	}, s.Refresh)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "auth-logout",
+		Method:      http.MethodGet,
+		Path:        "/logout",
+		Summary:     "Log out",
+		Tags:        []string{"auth"},
+	}, s.Logout)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "auth-me",
+		Method:      http.MethodGet,
+		Path:        "/me",
+		Summary:     "Get current user profile",
+		Tags:        []string{"auth"},
+		Middlewares: huma.Middlewares{m},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.Me)
 }

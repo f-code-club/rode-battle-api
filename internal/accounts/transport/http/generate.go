@@ -1,9 +1,11 @@
 package http
 
 import (
-	"github.com/f-code-club/rode-battle-api/internal/accounts/service"
-	"github.com/go-fuego/fuego"
+	"context"
+
 	"github.com/google/uuid"
+
+	"github.com/f-code-club/rode-battle-api/internal/accounts/service"
 )
 
 type Role string
@@ -15,16 +17,24 @@ const (
 )
 
 type GenerateRequest struct {
-	Email string `json:"email" validate:"required,email"`
-	Name  string `json:"name" validate:"required"`
-	Role  Role   `json:"role" validate:"required"`
+	Email string `json:"email" format:"email" required:"true"`
+	Name  string `json:"name" required:"true"`
+	Role  Role   `json:"role" enum:"participant,jury,admin" required:"true"`
 }
 
-func (s *Server) Generate(c fuego.ContextWithBody[GenerateRequest]) (uuid.UUID, error) {
-	body, err := c.Body()
+type GenerateInput struct {
+	Body GenerateRequest
+}
+
+type GenerateOutput struct {
+	Body uuid.UUID
+}
+
+func (s *Server) Generate(ctx context.Context, input *GenerateInput) (*GenerateOutput, error) {
+	id, err := s.service.Generate(ctx, input.Body.Email, input.Body.Name, service.Role(input.Body.Role))
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
-	return s.service.Generate(c.Context(), body.Email, body.Name, service.Role(body.Role))
+	return &GenerateOutput{Body: id}, nil
 }

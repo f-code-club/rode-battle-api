@@ -1,27 +1,50 @@
 package http
 
 import (
+	"context"
+	"errors"
 	"time"
 
-	"github.com/go-fuego/fuego"
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 )
 
 type CreateContestRequest struct {
-	Name     string      `json:"name" validate:"required"`
-	Start    time.Time   `json:"start" validate:"required"`
-	End      time.Time   `json:"end" validate:"required,gtfield=Start"`
-	Problems []uuid.UUID `json:"problems" validate:"unique,dive,required"`
+	Name     string      `json:"name" required:"true"`
+	Start    time.Time   `json:"start" required:"true"`
+	End      time.Time   `json:"end" required:"true"`
+	Problems []uuid.UUID `json:"problems" required:"true"`
 }
 
-func (s *Server) CreateContest(c fuego.ContextWithBody[CreateContestRequest]) (uuid.UUID, error) {
-	body, err := c.Body()
-	if err != nil {
-		return uuid.Nil, fuego.BadRequestError{
-			Title: "Invalid request body",
-			Err:   err,
+type CreateContestInput struct {
+	Body CreateContestRequest
+}
+
+func (i *CreateContestInput) Resolve(ctx huma.Context) []error {
+	var errs []error
+	if !i.Body.End.After(i.Body.Start) {
+		errs = append(errs, errors.New("end time must be after start time"))
+	}
+	seen := make(map[uuid.UUID]struct{}, len(i.Body.Problems))
+	for _, p := range i.Body.Problems {
+		if _, ok := seen[p]; ok {
+			errs = append(errs, errors.New("problem IDs must be unique"))
+			break
 		}
+		seen[p] = struct{}{}
+	}
+	return errs
+}
+
+type CreateContestOutput struct {
+	Body uuid.UUID
+}
+
+func (s *Server) CreateContest(ctx context.Context, input *CreateContestInput) (*CreateContestOutput, error) {
+	id, err := s.service.CreateContest(ctx, input.Body.Name, input.Body.Start, input.Body.End, input.Body.Problems)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.service.CreateContest(c.Context(), body.Name, body.Start, body.End, body.Problems)
+	return &CreateContestOutput{Body: id}, nil
 }

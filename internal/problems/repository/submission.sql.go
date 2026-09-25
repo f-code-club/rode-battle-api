@@ -83,18 +83,3 @@ func (q *Queries) GetSubmitHistory(ctx context.Context, arg GetSubmitHistoryPara
 	}
 	return items, nil
 }
-
-const submissionExists = `-- name: SubmissionExists :one
-SELECT EXISTS (
-    SELECT 1
-    FROM submissions
-    WHERE id = $1
-)
-`
-
-func (q *Queries) SubmissionExists(ctx context.Context, id uuid.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, submissionExists, id)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}

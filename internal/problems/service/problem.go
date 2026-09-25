@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/f-code-club/rode-battle-api/internal/problems/repository"
@@ -38,6 +39,17 @@ var algorithmLanguages = map[string]struct{}{
 }
 
 type Problem struct {
+	Position    *int32     `json:"position"`
+	Name        string     `json:"name"`
+	Content     string     `json:"content"`
+	TimeLimit   *int32     `json:"time_limit"`
+	MemoryLimit *int32     `json:"memory_limit"`
+	ColorCode   *string    `json:"color_code"`
+	Languages   []Language `json:"languages"`
+}
+
+type ProblemListItem struct {
+	ID          uuid.UUID  `json:"id"`
 	Position    *int32     `json:"position"`
 	Name        string     `json:"name"`
 	Content     string     `json:"content"`
@@ -246,4 +258,40 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 	}
 
 	return rows, nil
+}
+
+func (s *Service) GetProblems(ctx context.Context) ([]ProblemListItem, error) {
+	rows, err := repository.New(s.pool).GetProblems(ctx)
+	if err != nil {
+		return nil, apperr.Wrap(http.StatusInternalServerError, "Failed to get problems", err)
+	}
+
+	problems := make([]ProblemListItem, 0, len(rows))
+	for _, row := range rows {
+		content := row.Content
+		if slices.Contains(row.Languages, "html") {
+			content, err = s.s3.GetPresignedURl(ctx, row.Content, 15*time.Minute)
+			if err != nil {
+				return nil, apperr.Wrap(http.StatusInternalServerError, "Failed to get problem content URL", err)
+			}
+		}
+
+		languages := make([]Language, len(row.Languages))
+		for i, lang := range row.Languages {
+			languages[i] = Language(lang)
+		}
+
+		problems = append(problems, ProblemListItem{
+			ID:          row.ID,
+			Position:    row.Position,
+			Name:        row.Name,
+			Content:     content,
+			TimeLimit:   row.TimeLimit,
+			MemoryLimit: row.MemoryLimit,
+			ColorCode:   row.ColorCode,
+			Languages:   languages,
+		})
+	}
+
+	return problems, nil
 }

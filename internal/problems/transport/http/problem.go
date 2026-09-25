@@ -109,3 +109,16 @@ func (s *Server) CreateProblem(ctx context.Context, input *CreateProblemInput) (
 
 	return &CreateProblemOutput{Body: id}, nil
 }
+
+type GetProblemsOutput struct {
+	Body []service.ProblemListItem
+}
+
+func (s *Server) GetProblems(ctx context.Context, input *struct{}) (*GetProblemsOutput, error) {
+	problems, err := s.service.GetProblems(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetProblemsOutput{Body: problems}, nil
+}

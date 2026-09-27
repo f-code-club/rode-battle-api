@@ -19,9 +19,6 @@ SELECT @problem_id, unnest(@language::text[])::language;
 
 -- name: GetProblems :many
 SELECT
-    p.id, p.position, p.name, p.content, p.time_limit, p.memory_limit, p.color_code,
-    COALESCE(array_agg(pl.language ORDER BY pl.language) FILTER (WHERE pl.language IS NOT NULL), '{}')::text[] AS languages
+    p.id, p.position, p.name, p.time_limit, p.memory_limit
 FROM problems p
-LEFT JOIN problem_languages pl ON pl.problem_id = p.id
-GROUP BY p.id, p.position, p.name, p.content, p.time_limit, p.memory_limit, p.color_code
 ORDER BY p.position NULLS LAST;

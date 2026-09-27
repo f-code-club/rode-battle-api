@@ -114,11 +114,8 @@ func (q *Queries) GetProblemLanguages(ctx context.Context, problemID uuid.UUID) 
 
 const getProblems = `-- name: GetProblems :many
 SELECT
-    p.id, p.position, p.name, p.content, p.time_limit, p.memory_limit, p.color_code,
-    COALESCE(array_agg(pl.language ORDER BY pl.language) FILTER (WHERE pl.language IS NOT NULL), '{}')::text[] AS languages
+    p.id, p.position, p.name, p.time_limit, p.memory_limit
 FROM problems p
-LEFT JOIN problem_languages pl ON pl.problem_id = p.id
-GROUP BY p.id, p.position, p.name, p.content, p.time_limit, p.memory_limit, p.color_code
 ORDER BY p.position NULLS LAST
 `
 
@@ -126,11 +123,8 @@ type GetProblemsRow struct {
 	ID          uuid.UUID
 	Position    *int32
 	Name        string
-	Content     string
 	TimeLimit   *int32
 	MemoryLimit *int32
-	ColorCode   *string
-	Languages   []string
 }
 
 func (q *Queries) GetProblems(ctx context.Context) ([]GetProblemsRow, error) {
@@ -146,11 +140,8 @@ func (q *Queries) GetProblems(ctx context.Context) ([]GetProblemsRow, error) {
 			&i.ID,
 			&i.Position,
 			&i.Name,
-			&i.Content,
 			&i.TimeLimit,
 			&i.MemoryLimit,
-			&i.ColorCode,
-			&i.Languages,
 		); err != nil {
 			return nil, err
 		}

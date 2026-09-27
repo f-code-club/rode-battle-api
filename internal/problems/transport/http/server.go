@@ -83,4 +83,16 @@ func (s *Server) RegisterRoutes(api huma.API) {
 			{"bearerAuth": {}},
 		},
 	}, s.CreateSubmission)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "problems-get-all",
+		Method:      http.MethodGet,
+		Path:        "",
+		Summary:     "Get all problems",
+		Tags:        []string{"problems"},
+		Middlewares: huma.Middlewares{m, requireJury},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.GetProblems)
 }

@@ -47,6 +47,14 @@ type Problem struct {
 	Languages   []Language `json:"languages"`
 }
 
+type ProblemListItem struct {
+	ID          uuid.UUID `json:"id"`
+	Position    *int32    `json:"position"`
+	Name        string    `json:"name"`
+	TimeLimit   *int32    `json:"time_limit"`
+	MemoryLimit *int32    `json:"memory_limit"`
+}
+
 type ProblemHistory struct {
 	ID        uuid.UUID `json:"id"`
 	Language  Language  `json:"language"`
@@ -246,4 +254,25 @@ func (s *Service) CreateProblem(ctx context.Context, input CreateProblemInput, l
 	}
 
 	return rows, nil
+}
+
+func (s *Service) GetProblems(ctx context.Context) ([]ProblemListItem, error) {
+	rows, err := repository.New(s.pool).GetProblems(ctx)
+	if err != nil {
+		return nil, apperr.Wrap(http.StatusInternalServerError, "Failed to get problems", err)
+	}
+
+	problems := make([]ProblemListItem, 0, len(rows))
+	for _, row := range rows {
+
+		problems = append(problems, ProblemListItem{
+			ID:          row.ID,
+			Position:    row.Position,
+			Name:        row.Name,
+			TimeLimit:   row.TimeLimit,
+			MemoryLimit: row.MemoryLimit,
+		})
+	}
+
+	return problems, nil
 }

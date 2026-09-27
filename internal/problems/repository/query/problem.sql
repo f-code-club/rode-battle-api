@@ -16,3 +16,9 @@ RETURNING id;
 -- name: CreateProblemLanguage :exec
 INSERT INTO problem_languages (problem_id, language)
 SELECT @problem_id, unnest(@language::text[])::language;
+
+-- name: GetProblems :many
+SELECT
+    p.id, p.position, p.name, p.time_limit, p.memory_limit
+FROM problems p
+ORDER BY p.position NULLS LAST;

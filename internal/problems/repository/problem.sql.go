@@ -111,3 +111,44 @@ func (q *Queries) GetProblemLanguages(ctx context.Context, problemID uuid.UUID) 
 	}
 	return items, nil
 }
+
+const getProblems = `-- name: GetProblems :many
+SELECT
+    p.id, p.position, p.name, p.time_limit, p.memory_limit
+FROM problems p
+ORDER BY p.position NULLS LAST
+`
+
+type GetProblemsRow struct {
+	ID          uuid.UUID
+	Position    *int32
+	Name        string
+	TimeLimit   *int32
+	MemoryLimit *int32
+}
+
+func (q *Queries) GetProblems(ctx context.Context) ([]GetProblemsRow, error) {
+	rows, err := q.db.Query(ctx, getProblems)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProblemsRow
+	for rows.Next() {
+		var i GetProblemsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Position,
+			&i.Name,
+			&i.TimeLimit,
+			&i.MemoryLimit,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

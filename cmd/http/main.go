@@ -93,6 +93,7 @@ func build() (*http.Server, error) {
 			Description:  "Enter your JWT token in the format: Bearer <token>",
 		},
 	}
+	config.CreateHooks = nil
 
 	api := humago.New(mux, config)
 	apiV1 := huma.NewGroup(api, "/api/v1")

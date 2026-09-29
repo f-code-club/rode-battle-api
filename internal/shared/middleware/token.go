@@ -32,6 +32,11 @@ func NewParseToken(api huma.API, accessTokenSvc *shared.TokenService) func(ctx h
 			return
 		}
 
+		if scope := scopeFrom(ctx); scope != nil {
+			scope.accountID = userId
+			scope.hasAccountID = true
+		}
+
 		ctx = huma.WithValue(ctx, AccountIDKey, userId)
 		next(ctx)
 	}

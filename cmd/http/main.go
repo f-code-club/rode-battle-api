@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -93,8 +95,18 @@ func build() (*http.Server, error) {
 			Description:  "Enter your JWT token in the format: Bearer <token>",
 		},
 	}
+	config.Transformers = append(config.Transformers,
+		middleware.CaptureErrorTransformer,
+		middleware.ServiceErrorTransformer,
+	)
+	config.CreateHooks = nil
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	api := humago.New(mux, config)
+	api.UseMiddleware(middleware.NewRequestScope())
+	api.UseMiddleware(middleware.NewAccessLog(logger))
 	apiV1 := huma.NewGroup(api, "/api/v1")
 
 	authServer := auth.NewServer(&cfg, pool, &accessTokenSvc)

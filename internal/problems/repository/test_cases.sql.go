@@ -12,18 +12,18 @@ import (
 )
 
 const createTestCase = `-- name: CreateTestCase :one
-INSERT INTO test_cases (problem_id, input_path)
+INSERT INTO test_cases (problem_id, input)
 VALUES ($1, $2)
 RETURNING id
 `
 
 type CreateTestCaseParams struct {
 	ProblemID uuid.UUID
-	InputPath string
+	Input     string
 }
 
 func (q *Queries) CreateTestCase(ctx context.Context, arg CreateTestCaseParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, createTestCase, arg.ProblemID, arg.InputPath)
+	row := q.db.QueryRow(ctx, createTestCase, arg.ProblemID, arg.Input)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err

@@ -202,7 +202,7 @@ type Submission struct {
 type TestCase struct {
 	ID        uuid.UUID
 	ProblemID uuid.UUID
-	InputPath string
+	Input     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

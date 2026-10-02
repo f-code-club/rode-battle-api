@@ -11,15 +11,15 @@ import (
 
 type CreateTestCaseParams = repository.CreateTestCaseParams
 
-func (s *Service) CreateTestCase(ctx context.Context, problemID uuid.UUID, inputPath string) (uuid.UUID, error) {
+func (s *Service) CreateTestCase(ctx context.Context, problemID uuid.UUID, input string) (uuid.UUID, error) {
 	queries := repository.New(s.pool)
-	if inputPath == "" {
+	if input == "" {
 		return uuid.Nil, apperr.Wrap(http.StatusBadRequest, "Empty input_path", nil)
 	}
 
 	testCaseID, err := queries.CreateTestCase(ctx, CreateTestCaseParams{
 		ProblemID: problemID,
-		InputPath: inputPath,
+		Input:     input,
 	})
 	if err != nil {
 		return uuid.Nil, apperr.Wrap(http.StatusInternalServerError, "Failed to create test case", err)

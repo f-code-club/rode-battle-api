@@ -95,4 +95,16 @@ func (s *Server) RegisterRoutes(api huma.API) {
 			{"bearerAuth": {}},
 		},
 	}, s.GetProblems)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "problem-create-test-case",
+		Method:      http.MethodPost,
+		Path:        "/{id}/test-case",
+		Summary:     "Create new test case for problem",
+		Tags:        []string{"problems", "test-case"},
+		Middlewares: huma.Middlewares{m, requireJury},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.CreateTestCase)
 }

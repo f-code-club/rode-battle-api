@@ -29,15 +29,21 @@ type Ranking struct {
 
 type submissionRow = repository.GetContestSubmissionsRow
 
+type submissionsWithinWindowRow = repository.GetContestSubmissionsWithinWindowRow
+
+type getContestSubmissionsWithinWindow = repository.GetContestSubmissionsWithinWindowParams
+
 const (
 	PenaltyPerSubmission = 10
 	ScorePerProblem      = 1
 	PenaltyPerCodeChar   = 1
+	ParticipantWindow    = 4 * time.Hour
 )
 
 func (s *Service) GetRank(
 	ctx context.Context,
 	contestID uuid.UUID,
+	isJury bool,
 ) ([]Ranking, error) {
 	queries := repository.New(s.pool)
 
@@ -50,7 +56,23 @@ func (s *Service) GetRank(
 		)
 	}
 
-	rows, err := queries.GetContestSubmissions(ctx, contestID)
+	var rows []submissionRow
+	if isJury {
+		rows, err = queries.GetContestSubmissions(ctx, contestID)
+	} else {
+		var windowRows []submissionsWithinWindowRow
+		windowRows, err = queries.GetContestSubmissionsWithinWindow(ctx,
+			getContestSubmissionsWithinWindow{
+				ContestID: contestID,
+				Cutoff:    contestTime.StartTime.Add(ParticipantWindow),
+			})
+		if err == nil {
+			rows = make([]submissionRow, len(windowRows))
+			for i, r := range windowRows {
+				rows[i] = submissionRow(r)
+			}
+		}
+	}
 	if err != nil {
 		return nil, errors.Wrap(
 			http.StatusInternalServerError,

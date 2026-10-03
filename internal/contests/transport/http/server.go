@@ -56,6 +56,10 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "/{id}/rank",
 		Summary:     "Get contest ranking",
 		Tags:        []string{"contests"},
+		Middlewares: huma.Middlewares{m},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
 	}, s.GetRank)
 
 	huma.Register(g, huma.Operation{

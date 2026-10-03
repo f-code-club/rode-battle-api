@@ -132,6 +132,75 @@ func (q *Queries) GetContestSubmissions(ctx context.Context, contestID uuid.UUID
 	return items, nil
 }
 
+const getContestSubmissionsWithinWindow = `-- name: GetContestSubmissionsWithinWindow :many
+SELECT
+    a.id AS account_id,
+    a.name AS account_name,
+    p.id AS problem_id,
+    p.position AS problem_position,
+    s.language,
+    s.verdict,
+    s.score,
+    s.code,
+    s.created_at
+FROM submissions s
+INNER JOIN problems p ON p.id = s.problem_id
+INNER JOIN contests c ON c.id = p.contest_id
+INNER JOIN accounts a ON a.id = s.account_id
+WHERE p.contest_id = $1
+  AND a.role = 'participant'
+  AND a.is_banned = false
+  AND s.created_at BETWEEN c.start_time AND LEAST(c.end_time, $2::timestamptz)
+ORDER BY a.id, p.position, s.created_at
+`
+
+type GetContestSubmissionsWithinWindowParams struct {
+	ContestID uuid.UUID
+	Cutoff    time.Time
+}
+
+type GetContestSubmissionsWithinWindowRow struct {
+	AccountID       uuid.UUID
+	AccountName     string
+	ProblemID       uuid.UUID
+	ProblemPosition *int32
+	Language        Language
+	Verdict         *Verdict
+	Score           *float32
+	Code            string
+	CreatedAt       time.Time
+}
+
+func (q *Queries) GetContestSubmissionsWithinWindow(ctx context.Context, arg GetContestSubmissionsWithinWindowParams) ([]GetContestSubmissionsWithinWindowRow, error) {
+	rows, err := q.db.Query(ctx, getContestSubmissionsWithinWindow, arg.ContestID, arg.Cutoff)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetContestSubmissionsWithinWindowRow
+	for rows.Next() {
+		var i GetContestSubmissionsWithinWindowRow
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.AccountName,
+			&i.ProblemID,
+			&i.ProblemPosition,
+			&i.Language,
+			&i.Verdict,
+			&i.Score,
+			&i.Code,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getContestTimeRange = `-- name: GetContestTimeRange :one
 SELECT
     start_time,

@@ -86,9 +86,14 @@ INNER JOIN accounts a ON a.id = s.account_id
 WHERE p.contest_id = $1
   AND a.role = 'participant'
   AND a.is_banned = false
-  AND s.created_at BETWEEN c.start_time AND c.end_time
+  AND s.created_at BETWEEN c.start_time AND $2::timestamptz
 ORDER BY a.id, p.position, s.created_at
 `
+
+type GetContestSubmissionsParams struct {
+	ContestID uuid.UUID
+	Cutoff    time.Time
+}
 
 type GetContestSubmissionsRow struct {
 	AccountID       uuid.UUID
@@ -102,8 +107,8 @@ type GetContestSubmissionsRow struct {
 	CreatedAt       time.Time
 }
 
-func (q *Queries) GetContestSubmissions(ctx context.Context, contestID uuid.UUID) ([]GetContestSubmissionsRow, error) {
-	rows, err := q.db.Query(ctx, getContestSubmissions, contestID)
+func (q *Queries) GetContestSubmissions(ctx context.Context, arg GetContestSubmissionsParams) ([]GetContestSubmissionsRow, error) {
+	rows, err := q.db.Query(ctx, getContestSubmissions, arg.ContestID, arg.Cutoff)
 	if err != nil {
 		return nil, err
 	}

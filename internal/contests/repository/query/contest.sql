@@ -16,7 +16,7 @@ INNER JOIN accounts a ON a.id = s.account_id
 WHERE p.contest_id = @contest_id
   AND a.role = 'participant'
   AND a.is_banned = false
-  AND s.created_at BETWEEN c.start_time AND c.end_time
+  AND s.created_at BETWEEN c.start_time AND @cutoff::timestamptz
 ORDER BY a.id, p.position, s.created_at;
 
 -- name: GetContestTimeRange :one

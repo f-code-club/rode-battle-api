@@ -13,17 +13,15 @@ import (
 )
 
 type Server struct {
-	service        service.Service
-	accessTokenSvc *shared.TokenService
-	s3             *shared.S3Service
-	amqp           *shared.AmqpService
-	authSvc        auth.Service
+	service service.Service
+	s3      *shared.S3Service
+	amqp    *shared.AmqpService
+	authSvc auth.Service
 }
 
 func NewServer(
 	cfg *shared.Config,
 	pool *pgxpool.Pool,
-	accessTokenSvc *shared.TokenService,
 	s3 *shared.S3Service,
 	amqp *shared.AmqpService,
 	judgeUrl string,
@@ -31,12 +29,12 @@ func NewServer(
 ) Server {
 	service := service.New(pool, s3, amqp, judgeUrl)
 
-	return Server{service, accessTokenSvc, s3, amqp, authSvc}
+	return Server{service, s3, amqp, authSvc}
 }
 
 func (s *Server) RegisterRoutes(api huma.API) {
-	m := middleware.NewParseToken(api, s.accessTokenSvc)
 	requireJury := middleware.NewRequireRole(api, s.authSvc, auth.Jury)
+	requireAll := middleware.NewRequireRole(api, s.authSvc, auth.Participant, auth.Jury, auth.Admin)
 
 	g := huma.NewGroup(api, "/problems")
 
@@ -46,7 +44,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "",
 		Summary:     "Create a problem",
 		Tags:        []string{"problems"},
-		Middlewares: huma.Middlewares{m, requireJury},
+		Middlewares: huma.Middlewares{requireJury},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},
@@ -66,7 +64,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "/{id}/history",
 		Summary:     "Get submission history for problem",
 		Tags:        []string{"problems"},
-		Middlewares: huma.Middlewares{m},
+		Middlewares: huma.Middlewares{requireAll},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},
@@ -78,7 +76,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "/{id}/submit",
 		Summary:     "Create submission for problem",
 		Tags:        []string{"problems"},
-		Middlewares: huma.Middlewares{m},
+		Middlewares: huma.Middlewares{requireAll},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},
@@ -90,7 +88,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "",
 		Summary:     "Get all problems",
 		Tags:        []string{"problems"},
-		Middlewares: huma.Middlewares{m, requireJury},
+		Middlewares: huma.Middlewares{requireJury},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},
@@ -102,7 +100,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "/{id}/test-case",
 		Summary:     "Create new test case for problem",
 		Tags:        []string{"problems", "test-case"},
-		Middlewares: huma.Middlewares{m, requireJury},
+		Middlewares: huma.Middlewares{requireJury},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},

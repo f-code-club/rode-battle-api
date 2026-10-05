@@ -8,32 +8,27 @@ import (
 
 	auth "github.com/f-code-club/rode-battle-api/internal/auth/service"
 	"github.com/f-code-club/rode-battle-api/internal/contests/service"
-	"github.com/f-code-club/rode-battle-api/internal/shared"
 	"github.com/f-code-club/rode-battle-api/internal/shared/middleware"
 )
 
 type Server struct {
-	service        service.Service
-	accessTokenSvc *shared.TokenService
-	authSvc        auth.Service
+	service service.Service
+	authSvc auth.Service
 }
 
 func NewServer(
 	pool *pgxpool.Pool,
-	accessTokenSvc *shared.TokenService,
 	authSvc auth.Service,
 ) Server {
 	service := service.New(pool)
 
 	return Server{
-		service:        service,
-		accessTokenSvc: accessTokenSvc,
-		authSvc:        authSvc,
+		service: service,
+		authSvc: authSvc,
 	}
 }
 
 func (s *Server) RegisterRoutes(api huma.API) {
-	m := middleware.NewParseToken(api, s.accessTokenSvc)
 	requireJury := middleware.NewRequireRole(api, s.authSvc, auth.Jury)
 
 	g := huma.NewGroup(api, "/contests")
@@ -44,7 +39,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "",
 		Summary:     "Create a new contest",
 		Tags:        []string{"contests"},
-		Middlewares: huma.Middlewares{m, requireJury},
+		Middlewares: huma.Middlewares{requireJury},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},
@@ -56,7 +51,6 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "/{id}/rank",
 		Summary:     "Get contest ranking",
 		Tags:        []string{"contests"},
-		Middlewares: huma.Middlewares{m},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},

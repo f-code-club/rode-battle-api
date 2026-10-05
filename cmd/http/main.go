@@ -107,18 +107,19 @@ func build() (*http.Server, error) {
 	api := humago.New(mux, config)
 	api.UseMiddleware(middleware.NewRequestScope())
 	api.UseMiddleware(middleware.NewAccessLog(logger))
+	api.UseMiddleware(middleware.NewParseToken(api, &accessTokenSvc))
 	apiV1 := huma.NewGroup(api, "/api/v1")
 
 	authServer := auth.NewServer(&cfg, pool, &accessTokenSvc)
 	authServer.RegisterRoutes(apiV1)
 
-	accountServer := account.NewServer(&cfg, pool, &accessTokenSvc, authSvc)
+	accountServer := account.NewServer(&cfg, pool, authSvc)
 	accountServer.RegisterRoutes(apiV1)
 
-	problemServer := problem.NewServer(&cfg, pool, &accessTokenSvc, s3Service, amqp, cfg.JudgeURL, authSvc)
+	problemServer := problem.NewServer(&cfg, pool, s3Service, amqp, cfg.JudgeURL, authSvc)
 	problemServer.RegisterRoutes(apiV1)
 
-	contestServer := contest.NewServer(pool, &accessTokenSvc, authSvc)
+	contestServer := contest.NewServer(pool, authSvc)
 	contestServer.RegisterRoutes(api)
 
 	corsHandler := middleware.NewCors(cfg.CorsOrigin)(mux)

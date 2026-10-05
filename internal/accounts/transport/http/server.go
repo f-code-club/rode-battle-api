@@ -13,25 +13,22 @@ import (
 )
 
 type Server struct {
-	service        service.Service
-	accessTokenSvc *shared.TokenService
-	authSvc        auth.Service
+	service service.Service
+	authSvc auth.Service
 }
 
 func NewServer(
 	cfg *shared.Config,
 	pool *pgxpool.Pool,
-	accessTokenSvc *shared.TokenService,
 	authSvc auth.Service,
 ) Server {
 	emailSvc := shared.NewEmailService(cfg.EmailUsername, cfg.EmailPassword, cfg.EmailHost, cfg.EmailPort)
 	service := service.New(pool, emailSvc)
 
-	return Server{service, accessTokenSvc, authSvc}
+	return Server{service, authSvc}
 }
 
 func (s *Server) RegisterRoutes(api huma.API) {
-	m := middleware.NewParseToken(api, s.accessTokenSvc)
 	requireAdmin := middleware.NewRequireRole(api, s.authSvc, auth.Admin)
 
 	g := huma.NewGroup(api, "/accounts")
@@ -42,7 +39,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "/generate",
 		Summary:     "Generate account",
 		Tags:        []string{"accounts"},
-		Middlewares: huma.Middlewares{m, requireAdmin},
+		Middlewares: huma.Middlewares{requireAdmin},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},

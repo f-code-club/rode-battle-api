@@ -14,8 +14,7 @@ import (
 const refreshTokenCookie = "refresh_token"
 
 type Server struct {
-	service        service.Service
-	accessTokenSvc *shared.TokenService
+	service service.Service
 }
 
 func NewServer(
@@ -26,11 +25,11 @@ func NewServer(
 	refreshTokenSvc := shared.NewTokenService(cfg.JWTRefreshSecret, cfg.JWTRefreshExpiredIn)
 	service := service.New(pool, &refreshTokenSvc, accessTokenSvc)
 
-	return Server{service, accessTokenSvc}
+	return Server{service}
 }
 
 func (s *Server) RegisterRoutes(api huma.API) {
-	m := middleware.NewParseToken(api, s.accessTokenSvc)
+	requireAll := middleware.NewRequireRole(api, s.service, service.Participant, service.Jury, service.Admin)
 
 	g := huma.NewGroup(api, "/auth")
 
@@ -64,7 +63,7 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Path:        "/me",
 		Summary:     "Get current user profile",
 		Tags:        []string{"auth"},
-		Middlewares: huma.Middlewares{m},
+		Middlewares: huma.Middlewares{requireAll},
 		Security: []map[string][]string{
 			{"bearerAuth": {}},
 		},

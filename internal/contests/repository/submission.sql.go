@@ -20,13 +20,37 @@ SELECT
     s.language,
     s.verdict,
     s.score,
-    s.created_at
+    s.created_at,
+    COUNT(*) OVER() AS total_count
 FROM submissions s
 JOIN problems p ON p.id = s.problem_id
 JOIN accounts a ON a.id = s.account_id
 WHERE p.contest_id = $1
-ORDER BY s.created_at DESC
+  AND ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid
+       OR s.problem_id = $2::uuid)
+  AND ($3::uuid = '00000000-0000-0000-0000-000000000000'::uuid
+       OR s.account_id = $3::uuid)
+  AND ($4::language IS NULL OR s.language = $4)
+  AND ($5::verdict IS NULL OR s.verdict = $5)
+  AND (
+    $6::text IS NULL
+    OR p.name ILIKE '%' || $6 || '%'
+    OR a.name ILIKE '%' || $6 || '%'
+  )
+ORDER BY s.created_at DESC, s.id DESC
+LIMIT $8 OFFSET $7
 `
+
+type GetSubmissionsByContestParams struct {
+	ContestID  uuid.UUID
+	ProblemID  uuid.UUID
+	AccountID  uuid.UUID
+	Language   *Language
+	Verdict    *Verdict
+	Search     *string
+	PageOffset int32
+	PageLimit  int32
+}
 
 type GetSubmissionsByContestRow struct {
 	ID          uuid.UUID
@@ -36,10 +60,20 @@ type GetSubmissionsByContestRow struct {
 	Verdict     *Verdict
 	Score       *float32
 	CreatedAt   time.Time
+	TotalCount  int64
 }
 
-func (q *Queries) GetSubmissionsByContest(ctx context.Context, contestID uuid.UUID) ([]GetSubmissionsByContestRow, error) {
-	rows, err := q.db.Query(ctx, getSubmissionsByContest, contestID)
+func (q *Queries) GetSubmissionsByContest(ctx context.Context, arg GetSubmissionsByContestParams) ([]GetSubmissionsByContestRow, error) {
+	rows, err := q.db.Query(ctx, getSubmissionsByContest,
+		arg.ContestID,
+		arg.ProblemID,
+		arg.AccountID,
+		arg.Language,
+		arg.Verdict,
+		arg.Search,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +89,7 @@ func (q *Queries) GetSubmissionsByContest(ctx context.Context, contestID uuid.UU
 			&i.Verdict,
 			&i.Score,
 			&i.CreatedAt,
+			&i.TotalCount,
 		); err != nil {
 			return nil, err
 		}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/f-code-club/rode-battle-api/internal/contests/repository"
 	"github.com/f-code-club/rode-battle-api/internal/shared/errors"
+	"github.com/f-code-club/rode-battle-api/internal/shared/pagination"
 	"github.com/google/uuid"
 )
 
@@ -26,28 +27,19 @@ type SubmissionListItem struct {
 }
 
 type ListSubmissionsFilter struct {
+	pagination.Params
 	ProblemID uuid.UUID
 	AccountID uuid.UUID
 	Language  *Language
 	Verdict   *Verdict
 	Search    *string
-	Page      int
-	PageSize  int
-}
-
-type ListSubmissionsResult struct {
-	Items      []SubmissionListItem `json:"items"`
-	Page       int                  `json:"page"`
-	PageSize   int                  `json:"page_size"`
-	TotalItems int64                `json:"total_items"`
-	TotalPages int                  `json:"total_pages"`
 }
 
 func (s *Service) ListSubmissionsByContest(
 	ctx context.Context,
 	contestID uuid.UUID,
 	filter ListSubmissionsFilter,
-) (*ListSubmissionsResult, error) {
+) (*pagination.Response[SubmissionListItem], error) {
 	var search *string
 	if filter.Search != nil {
 		if trimmed := strings.TrimSpace(*filter.Search); trimmed != "" {
@@ -64,8 +56,8 @@ func (s *Service) ListSubmissionsByContest(
 		Language:   filter.Language,
 		Verdict:    filter.Verdict,
 		Search:     search,
-		PageLimit:  int32(filter.PageSize),
-		PageOffset: int32((filter.Page - 1) * filter.PageSize),
+		PageLimit:  filter.Limit(),
+		PageOffset: filter.Offset(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(
@@ -93,13 +85,5 @@ func (s *Service) ListSubmissionsByContest(
 		})
 	}
 
-	totalPages := int((total + int64(filter.PageSize) - 1) / int64(filter.PageSize))
-
-	return &ListSubmissionsResult{
-		Items:      items,
-		Page:       filter.Page,
-		PageSize:   filter.PageSize,
-		TotalItems: total,
-		TotalPages: totalPages,
-	}, nil
+	return pagination.NewResponse(items, total, filter.Page, filter.PageSize), nil
 }

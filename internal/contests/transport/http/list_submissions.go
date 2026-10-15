@@ -4,24 +4,22 @@ import (
 	"context"
 
 	"github.com/f-code-club/rode-battle-api/internal/contests/service"
+	"github.com/f-code-club/rode-battle-api/internal/shared/pagination"
 	"github.com/google/uuid"
 )
 
 type ListSubmissionsByContestInput struct {
+	pagination.Params
 	ContestID uuid.UUID `path:"id"`
-
 	ProblemID uuid.UUID `query:"problem_id"`
 	AccountID uuid.UUID `query:"account_id"`
 	Language  string    `query:"language" enum:"rust,cpp,python,java,html"`
 	Verdict   string    `query:"verdict" enum:"accepted,wrong_answer,time_limit_exceeded,compilation_error,memory_limit_exceeded,runtime_error,idle_time_limit_exceeded"`
 	Search    string    `query:"search" maxLength:"100"`
-
-	Page     int `query:"page" default:"1" minimum:"1" maximum:"100000"`
-	PageSize int `query:"page_size" default:"20" minimum:"1" maximum:"100"`
 }
 
 type ListSubmissionsByContestOutput struct {
-	Body *service.ListSubmissionsResult
+	Body *pagination.Response[service.SubmissionListItem]
 }
 
 func (s *Server) ListSubmissionsByContest(
@@ -29,10 +27,9 @@ func (s *Server) ListSubmissionsByContest(
 	input *ListSubmissionsByContestInput,
 ) (*ListSubmissionsByContestOutput, error) {
 	filter := service.ListSubmissionsFilter{
+		Params:    input.Params,
 		ProblemID: input.ProblemID,
 		AccountID: input.AccountID,
-		Page:      input.Page,
-		PageSize:  input.PageSize,
 	}
 
 	if input.Language != "" {

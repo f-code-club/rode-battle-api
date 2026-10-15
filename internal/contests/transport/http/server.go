@@ -71,4 +71,16 @@ func (s *Server) RegisterRoutes(api huma.API) {
 		Summary:     "Get contest detail",
 		Tags:        []string{"contests"},
 	}, s.GetContestDetail)
+
+	huma.Register(g, huma.Operation{
+		OperationID: "submissions-list",
+		Method:      http.MethodGet,
+		Path:        "/{id}/submissions",
+		Summary:     "List submissions for a contest",
+		Tags:        []string{"contests"},
+		Middlewares: huma.Middlewares{requireJury},
+		Security: []map[string][]string{
+			{"bearerAuth": {}},
+		},
+	}, s.ListSubmissionsByContest)
 }
